@@ -17,9 +17,16 @@ type Team = {
 type Prediction = {
   id: string
   calculated_at: string
+  cutoff_at: string
   leader_score: string | null
   balanced_score: string | null
   challenger_score: string | null
+}
+
+type OddsSnapshot = {
+  bookmaker: string | null
+  captured_at: string
+  provider: string
 }
 
 function getSingleTeam(value: Team | Team[] | null): Team | null {
@@ -43,6 +50,73 @@ function getLatestPrediction(
   )[0]
 }
 
+function getRawBookmakerCount(snapshots: OddsSnapshot[] | null): number {
+  if (!snapshots) {
+    return 0
+  }
+
+  const bookmakers = new Set<string>()
+
+  for (const snapshot of snapshots) {
+    if (snapshot.provider === "the-odds-api" && snapshot.bookmaker) {
+      bookmakers.add(snapshot.bookmaker)
+    }
+  }
+
+  return bookmakers.size
+}
+
+function formatKickoff(value: string): string {
+  return new Intl.DateTimeFormat("fr-FR", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value))
+}
+
+function formatFreshness(value: string): string {
+  const calculatedAt = new Date(value).getTime()
+  const now = Date.now()
+
+  const diffMinutes = Math.max(0, Math.floor((now - calculatedAt) / 60_000))
+
+  if (diffMinutes < 1) {
+    return "à l'instant"
+  }
+
+  if (diffMinutes < 60) {
+    return `il y a ${diffMinutes} min`
+  }
+
+  const diffHours = Math.floor(diffMinutes / 60)
+
+  if (diffHours < 24) {
+    return `il y a ${diffHours} h`
+  }
+
+  const diffDays = Math.floor(diffHours / 24)
+
+  return `il y a ${diffDays} j`
+}
+
+function PredictionScore({
+  label,
+  score,
+}: {
+  label: string
+  score: string | null
+}) {
+  return (
+    <div className="rounded-lg bg-zinc-100 px-4 py-3 text-center">
+      <p className="text-xs text-zinc-500">{label}</p>
+
+      <p className="mt-1 text-lg font-bold">{score ?? "—"}</p>
+    </div>
+  )
+}
+
 export default async function RoundPage({ params }: PageProps) {
   const { round: roundParam } = await params
 
@@ -54,12 +128,25 @@ export default async function RoundPage({ params }: PageProps) {
 
   const matches = await getRoundMatches(round)
 
+  const calculatedMatches = matches.filter(
+    (match) =>
+      getLatestPrediction(match.predictions as Prediction[] | null) !== null,
+  ).length
+
   return (
     <main className="mx-auto max-w-6xl p-8">
       <header>
         <p className="text-sm font-medium text-zinc-500">Ligue 1</p>
 
-        <h1 className="mt-2 text-3xl font-bold">Journée {round}</h1>
+        <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <h1 className="text-3xl font-bold">Journée {round}</h1>
+
+          {matches.length > 0 && (
+            <p className="text-sm text-zinc-500">
+              {calculatedMatches}/{matches.length} prédictions disponibles
+            </p>
+          )}
+        </div>
       </header>
 
       {matches.length === 0 ? (
@@ -79,7 +166,13 @@ export default async function RoundPage({ params }: PageProps) {
               return null
             }
 
-            const prediction = getLatestPrediction(match.predictions)
+            const prediction = getLatestPrediction(
+              match.predictions as Prediction[] | null,
+            )
+
+            const bookmakerCount = getRawBookmakerCount(
+              match.odds_snapshots as OddsSnapshot[] | null,
+            )
 
             return (
               <Link
@@ -87,55 +180,80 @@ export default async function RoundPage({ params }: PageProps) {
                 href={`/match/${match.id}`}
                 className="block rounded-xl border p-5 transition hover:bg-zinc-50"
               >
-                <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
-                  <div>
-                    <p className="text-sm text-zinc-500">
-                      {new Date(match.kickoff_at).toLocaleString("fr-FR")}
-                    </p>
+                <div className="flex flex-col gap-6">
+                  <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                    <div>
+                      <p className="text-sm text-zinc-500">
+                        {formatKickoff(match.kickoff_at)}
+                      </p>
 
-                    <h2 className="mt-2 text-xl font-semibold">
-                      {homeTeam.short_name ?? homeTeam.name}
-                      {" — "}
-                      {awayTeam.short_name ?? awayTeam.name}
-                    </h2>
+                      <h2 className="mt-2 text-xl font-semibold">
+                        {homeTeam.short_name ?? homeTeam.name}
+                        {" — "}
+                        {awayTeam.short_name ?? awayTeam.name}
+                      </h2>
 
-                    {match.status === "FINISHED" &&
-                      match.home_goals !== null &&
-                      match.away_goals !== null && (
-                        <p className="mt-2 text-sm font-medium">
-                          Résultat : {match.home_goals}-{match.away_goals}
-                        </p>
+                      {match.status === "FINISHED" &&
+                        match.home_goals !== null &&
+                        match.away_goals !== null && (
+                          <p className="mt-2 text-sm font-medium">
+                            Résultat : {match.home_goals}-{match.away_goals}
+                          </p>
+                        )}
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      {prediction ? (
+                        <span className="rounded-full bg-zinc-900 px-3 py-1 text-xs font-medium text-white">
+                          Calculé
+                        </span>
+                      ) : (
+                        <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-600">
+                          En attente
+                        </span>
                       )}
+
+                      <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs text-zinc-600">
+                        {bookmakerCount} bookmaker
+                        {bookmakerCount > 1 ? "s" : ""}
+                      </span>
+                    </div>
                   </div>
 
                   {prediction ? (
-                    <div className="grid grid-cols-3 gap-3 text-center">
-                      <div className="rounded-lg bg-zinc-100 px-4 py-3">
-                        <p className="text-xs text-zinc-500">Leader</p>
+                    <>
+                      <div className="grid grid-cols-3 gap-3">
+                        <PredictionScore
+                          label="Leader"
+                          score={prediction.leader_score}
+                        />
 
-                        <p className="mt-1 text-lg font-bold">
-                          {prediction.leader_score ?? "—"}
-                        </p>
+                        <PredictionScore
+                          label="Équilibré"
+                          score={prediction.balanced_score}
+                        />
+
+                        <PredictionScore
+                          label="Challenger"
+                          score={prediction.challenger_score}
+                        />
                       </div>
 
-                      <div className="rounded-lg bg-zinc-100 px-4 py-3">
-                        <p className="text-xs text-zinc-500">Équilibré</p>
-
-                        <p className="mt-1 text-lg font-bold">
-                          {prediction.balanced_score ?? "—"}
+                      <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-zinc-500">
+                        <p>
+                          Calcul {formatFreshness(prediction.calculated_at)}
                         </p>
-                      </div>
 
-                      <div className="rounded-lg bg-zinc-100 px-4 py-3">
-                        <p className="text-xs text-zinc-500">Challenger</p>
-
-                        <p className="mt-1 text-lg font-bold">
-                          {prediction.challenger_score ?? "—"}
-                        </p>
+                        <p>Cutoff : {formatKickoff(prediction.cutoff_at)}</p>
                       </div>
-                    </div>
+                    </>
                   ) : (
-                    <p className="text-sm text-zinc-500">Aucune prédiction</p>
+                    <div className="rounded-lg bg-zinc-50 p-4">
+                      <p className="text-sm text-zinc-500">
+                        La prédiction sera disponible dès que suffisamment de
+                        données bookmaker auront été synchronisées.
+                      </p>
+                    </div>
                   )}
                 </div>
               </Link>

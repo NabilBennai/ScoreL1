@@ -11,22 +11,32 @@ export async function getRoundMatches(round: number) {
       status,
       home_goals,
       away_goals,
+
       home_team:teams!matches_home_team_id_fkey (
         id,
         name,
         short_name
       ),
+
       away_team:teams!matches_away_team_id_fkey (
         id,
         name,
         short_name
       ),
+
       predictions (
         id,
         calculated_at,
+        cutoff_at,
         leader_score,
         balanced_score,
         challenger_score
+      ),
+
+      odds_snapshots (
+        bookmaker,
+        captured_at,
+        provider
       )
     `,
     )
