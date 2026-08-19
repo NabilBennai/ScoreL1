@@ -17,7 +17,7 @@ export default function AdminPage() {
 
         <div className="mt-4">
           <Link href="/" className="text-sm font-medium underline">
-            Retour à l'accueil
+            Retour à l`&lsquo;accueil
           </Link>
         </div>
       </header>

@@ -146,7 +146,9 @@ export default function EvaluationPanel() {
   if (loading) {
     return (
       <section className="rounded-xl border p-6">
-        <p className="text-sm text-zinc-500">Chargement de l'évaluation...</p>
+        <p className="text-sm text-zinc-500">
+          Chargement de l`&lsquo;évaluation...
+        </p>
       </section>
     )
   }
@@ -170,7 +172,8 @@ export default function EvaluationPanel() {
           <h2 className="text-xl font-semibold">Évaluation du modèle</h2>
 
           <p className="mt-1 text-sm text-zinc-500">
-            Performance sur les matchs terminés disposant d'une prédiction.
+            Performance sur les matchs terminés disposant d`&lsquo;une
+            prédiction.
           </p>
         </div>
 
@@ -198,7 +201,8 @@ export default function EvaluationPanel() {
       {data.matchesEvaluated === 0 ? (
         <div className="mt-5 rounded-xl border p-6">
           <p className="text-sm text-zinc-500">
-            Aucun match terminé n'est encore disponible pour évaluer le modèle.
+            Aucun match terminé n`&lsquo;est encore disponible pour évaluer le
+            modèle.
           </p>
         </div>
       ) : (
