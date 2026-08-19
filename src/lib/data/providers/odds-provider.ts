@@ -25,8 +25,21 @@ export type ProviderOdds = {
   }
 }
 
+export type ProviderScore = {
+  externalId: string
+  homeTeam: string
+  awayTeam: string
+  commenceTime: string
+  completed: boolean
+  homeGoals: number | null
+  awayGoals: number | null
+  lastUpdate: string | null
+}
+
 export interface OddsProvider {
   getUpcomingEvents(): Promise<ProviderEvent[]>
 
   getOdds(): Promise<ProviderOdds[]>
+
+  getScores(daysFrom?: number): Promise<ProviderScore[]>
 }

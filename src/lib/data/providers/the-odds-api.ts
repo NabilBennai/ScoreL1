@@ -1,4 +1,9 @@
-import type { OddsProvider, ProviderEvent, ProviderOdds } from "./odds-provider"
+import type {
+  OddsProvider,
+  ProviderEvent,
+  ProviderOdds,
+  ProviderScore,
+} from "./odds-provider"
 
 const BASE_URL = "https://api.the-odds-api.com/v4"
 
@@ -31,6 +36,23 @@ type OddsApiEvent = {
   home_team: string
   away_team: string
   bookmakers?: OddsApiBookmaker[]
+}
+
+type OddsApiScore = {
+  name: string
+  score: string
+}
+
+type OddsApiScoreEvent = {
+  id: string
+  sport_key: string
+  sport_title: string
+  commence_time: string
+  completed: boolean
+  home_team: string
+  away_team: string
+  scores: OddsApiScore[] | null
+  last_update: string | null
 }
 
 function getApiKey(): string {
@@ -95,6 +117,29 @@ function parseOver25(market: OddsApiMarket) {
     over: over.price,
     under: under.price,
   }
+}
+
+function parseScore(
+  scores: OddsApiScore[] | null,
+  teamName: string,
+): number | null {
+  if (!scores) {
+    return null
+  }
+
+  const entry = scores.find((score) => score.name === teamName)
+
+  if (!entry) {
+    return null
+  }
+
+  const value = Number(entry.score)
+
+  if (!Number.isInteger(value) || value < 0) {
+    return null
+  }
+
+  return value
 }
 
 export class TheOddsApiProvider implements OddsProvider {
@@ -176,5 +221,38 @@ export class TheOddsApiProvider implements OddsProvider {
     }
 
     return results
+  }
+
+  async getScores(daysFrom = 3): Promise<ProviderScore[]> {
+    if (!Number.isInteger(daysFrom) || daysFrom < 1 || daysFrom > 3) {
+      throw new Error("daysFrom must be an integer between 1 and 3")
+    }
+
+    const url = buildUrl(`/sports/${SPORT_KEY}/scores`, {
+      apiKey: getApiKey(),
+      daysFrom: String(daysFrom),
+      dateFormat: "iso",
+    })
+
+    const response = await fetch(url, {
+      cache: "no-store",
+    })
+
+    if (!response.ok) {
+      throw new Error(`The Odds API scores request failed: ${response.status}`)
+    }
+
+    const events = (await response.json()) as OddsApiScoreEvent[]
+
+    return events.map((event) => ({
+      externalId: event.id,
+      homeTeam: event.home_team,
+      awayTeam: event.away_team,
+      commenceTime: event.commence_time,
+      completed: event.completed,
+      homeGoals: parseScore(event.scores, event.home_team),
+      awayGoals: parseScore(event.scores, event.away_team),
+      lastUpdate: event.last_update,
+    }))
   }
 }

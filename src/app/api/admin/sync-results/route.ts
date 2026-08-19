@@ -1,15 +1,12 @@
 import { NextResponse } from "next/server"
-import { runLigue1Pipeline } from "@/lib/data/services/run-ligue1-pipeline"
+import { syncMatchResults } from "@/lib/data/services/sync-match-results"
 
 export async function POST() {
-  const startedAt = Date.now()
-
   try {
-    const result = await runLigue1Pipeline()
+    const result = await syncMatchResults()
 
     return NextResponse.json({
       success: true,
-      durationMs: Date.now() - startedAt,
       ...result,
     })
   } catch (error) {
@@ -18,8 +15,7 @@ export async function POST() {
     return NextResponse.json(
       {
         success: false,
-        durationMs: Date.now() - startedAt,
-        error: "PIPELINE_FAILED",
+        error: "RESULT_SYNC_FAILED",
       },
       {
         status: 500,
