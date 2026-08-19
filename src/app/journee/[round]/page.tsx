@@ -50,20 +50,50 @@ function getLatestPrediction(
   )[0]
 }
 
+function getRawBookmakerSnapshots(
+  snapshots: OddsSnapshot[] | null,
+): OddsSnapshot[] {
+  return (snapshots ?? []).filter(
+    (snapshot) =>
+      snapshot.provider === "the-odds-api" && snapshot.bookmaker !== null,
+  )
+}
+
 function getRawBookmakerCount(snapshots: OddsSnapshot[] | null): number {
-  if (!snapshots) {
-    return 0
-  }
-
-  const bookmakers = new Set<string>()
-
-  for (const snapshot of snapshots) {
-    if (snapshot.provider === "the-odds-api" && snapshot.bookmaker) {
-      bookmakers.add(snapshot.bookmaker)
-    }
-  }
+  const bookmakers = new Set(
+    getRawBookmakerSnapshots(snapshots)
+      .map((snapshot) => snapshot.bookmaker)
+      .filter((bookmaker): bookmaker is string => bookmaker !== null),
+  )
 
   return bookmakers.size
+}
+
+function getLatestRawOddsAt(snapshots: OddsSnapshot[] | null): string | null {
+  const rawSnapshots = getRawBookmakerSnapshots(snapshots)
+
+  if (rawSnapshots.length === 0) {
+    return null
+  }
+
+  return [...rawSnapshots].sort(
+    (a, b) =>
+      new Date(b.captured_at).getTime() - new Date(a.captured_at).getTime(),
+  )[0].captured_at
+}
+
+function hasNewerOddsThanPrediction(
+  prediction: Prediction,
+  latestRawOddsAt: string | null,
+): boolean {
+  if (!latestRawOddsAt) {
+    return false
+  }
+
+  return (
+    new Date(latestRawOddsAt).getTime() >
+    new Date(prediction.cutoff_at).getTime()
+  )
 }
 
 function formatKickoff(value: string): string {
@@ -77,10 +107,10 @@ function formatKickoff(value: string): string {
 }
 
 function formatFreshness(value: string): string {
-  const calculatedAt = new Date(value).getTime()
+  const timestamp = new Date(value).getTime()
   const now = Date.now()
 
-  const diffMinutes = Math.max(0, Math.floor((now - calculatedAt) / 60_000))
+  const diffMinutes = Math.max(0, Math.floor((now - timestamp) / 60_000))
 
   if (diffMinutes < 1) {
     return "à l'instant"
@@ -166,13 +196,19 @@ export default async function RoundPage({ params }: PageProps) {
               return null
             }
 
-            const prediction = getLatestPrediction(
-              match.predictions as Prediction[] | null,
-            )
+            const predictions = match.predictions as Prediction[] | null
 
-            const bookmakerCount = getRawBookmakerCount(
-              match.odds_snapshots as OddsSnapshot[] | null,
-            )
+            const snapshots = match.odds_snapshots as OddsSnapshot[] | null
+
+            const prediction = getLatestPrediction(predictions)
+
+            const bookmakerCount = getRawBookmakerCount(snapshots)
+
+            const latestRawOddsAt = getLatestRawOddsAt(snapshots)
+
+            const newerOddsAvailable = prediction
+              ? hasNewerOddsThanPrediction(prediction, latestRawOddsAt)
+              : false
 
             return (
               <Link
@@ -213,6 +249,12 @@ export default async function RoundPage({ params }: PageProps) {
                         </span>
                       )}
 
+                      {newerOddsAvailable && (
+                        <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-800">
+                          Cotes plus récentes
+                        </span>
+                      )}
+
                       <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs text-zinc-600">
                         {bookmakerCount} bookmaker
                         {bookmakerCount > 1 ? "s" : ""}
@@ -241,10 +283,16 @@ export default async function RoundPage({ params }: PageProps) {
 
                       <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-zinc-500">
                         <p>
-                          Calcul {formatFreshness(prediction.calculated_at)}
+                          Prédiction {formatFreshness(prediction.calculated_at)}
                         </p>
 
-                        <p>Cutoff : {formatKickoff(prediction.cutoff_at)}</p>
+                        <p>Consensus {formatFreshness(prediction.cutoff_at)}</p>
+
+                        {latestRawOddsAt && (
+                          <p>
+                            Dernières cotes {formatFreshness(latestRawOddsAt)}
+                          </p>
+                        )}
                       </div>
                     </>
                   ) : (
