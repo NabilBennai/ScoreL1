@@ -1,5 +1,8 @@
 import Link from "next/link"
-import { getAvailableRounds } from "@/lib/data/repositories/home-repository"
+import {
+  getAvailableRounds,
+  getRelevantRound,
+} from "@/lib/data/repositories/home-repository"
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("fr-FR", {
@@ -12,7 +15,7 @@ function formatDate(value: string) {
 export default async function HomePage() {
   const rounds = await getAvailableRounds()
 
-  const latestRound = rounds.length > 0 ? rounds[rounds.length - 1] : null
+  const relevantRound = getRelevantRound(rounds)
 
   return (
     <main className="mx-auto max-w-6xl p-8">
@@ -31,14 +34,20 @@ export default async function HomePage() {
           Leader, Équilibré et Challenger.
         </p>
 
-        {latestRound && (
+        {relevantRound && (
           <div className="mt-8">
             <Link
-              href={`/journee/${latestRound.round}`}
+              href={`/journee/${relevantRound.round}`}
               className="inline-flex rounded-lg bg-zinc-900 px-5 py-3 font-medium text-white transition hover:bg-zinc-700"
             >
-              Voir la journée {latestRound.round}
+              Voir la journée {relevantRound.round}
             </Link>
+
+            <p className="mt-3 text-sm text-zinc-500">
+              {relevantRound.matchCount} match
+              {relevantRound.matchCount > 1 ? "s" : ""} disponible
+              {relevantRound.matchCount > 1 ? "s" : ""}
+            </p>
           </div>
         )}
       </section>
@@ -67,30 +76,45 @@ export default async function HomePage() {
           </div>
         ) : (
           <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {rounds.map((round) => (
-              <Link
-                key={round.round}
-                href={`/journee/${round.round}`}
-                className="rounded-xl border p-5 transition hover:bg-zinc-50"
-              >
-                <p className="text-sm text-zinc-500">Ligue 1</p>
+            {rounds.map((round) => {
+              const isRelevant = relevantRound?.round === round.round
 
-                <p className="mt-1 text-xl font-semibold">
-                  Journée {round.round}
-                </p>
+              return (
+                <Link
+                  key={round.round}
+                  href={`/journee/${round.round}`}
+                  className="rounded-xl border p-5 transition hover:bg-zinc-50"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-sm text-zinc-500">Ligue 1</p>
 
-                <p className="mt-3 text-sm text-zinc-600">
-                  {round.matchCount} match
-                  {round.matchCount > 1 ? "s" : ""}
-                </p>
+                      <p className="mt-1 text-xl font-semibold">
+                        Journée {round.round}
+                      </p>
+                    </div>
 
-                <p className="mt-1 text-sm text-zinc-500">
-                  {formatDate(round.firstKickoffAt)}
-                  {round.firstKickoffAt !== round.lastKickoffAt &&
-                    ` — ${formatDate(round.lastKickoffAt)}`}
-                </p>
-              </Link>
-            ))}
+                    {isRelevant && (
+                      <span className="rounded-full bg-zinc-900 px-3 py-1 text-xs font-medium text-white">
+                        À suivre
+                      </span>
+                    )}
+                  </div>
+
+                  <p className="mt-3 text-sm text-zinc-600">
+                    {round.matchCount} match
+                    {round.matchCount > 1 ? "s" : ""}
+                  </p>
+
+                  <p className="mt-1 text-sm text-zinc-500">
+                    {formatDate(round.firstKickoffAt)}
+
+                    {round.firstKickoffAt !== round.lastKickoffAt &&
+                      ` — ${formatDate(round.lastKickoffAt)}`}
+                  </p>
+                </Link>
+              )
+            })}
           </div>
         )}
       </section>

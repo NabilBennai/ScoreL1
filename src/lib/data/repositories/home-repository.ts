@@ -1,6 +1,13 @@
 import { supabaseServer } from "@/lib/data/supabase/server"
 
-export async function getAvailableRounds() {
+export type AvailableRound = {
+  round: number
+  firstKickoffAt: string
+  lastKickoffAt: string
+  matchCount: number
+}
+
+export async function getAvailableRounds(): Promise<AvailableRound[]> {
   const { data, error } = await supabaseServer
     .from("matches")
     .select(
@@ -9,7 +16,11 @@ export async function getAvailableRounds() {
       kickoff_at
     `,
     )
+    .not("round", "is", null)
     .order("round", {
+      ascending: true,
+    })
+    .order("kickoff_at", {
       ascending: true,
     })
 
@@ -17,17 +28,13 @@ export async function getAvailableRounds() {
     throw new Error(`Unable to load available rounds: ${error.message}`)
   }
 
-  const rounds = new Map<
-    number,
-    {
-      round: number
-      firstKickoffAt: string
-      lastKickoffAt: string
-      matchCount: number
-    }
-  >()
+  const rounds = new Map<number, AvailableRound>()
 
-  for (const match of data) {
+  for (const match of data ?? []) {
+    if (match.round === null) {
+      continue
+    }
+
     const existing = rounds.get(match.round)
 
     if (!existing) {
@@ -55,4 +62,25 @@ export async function getAvailableRounds() {
   }
 
   return [...rounds.values()].sort((a, b) => a.round - b.round)
+}
+
+export function getRelevantRound(
+  rounds: AvailableRound[],
+  now = new Date(),
+): AvailableRound | null {
+  if (rounds.length === 0) {
+    return null
+  }
+
+  const nowTimestamp = now.getTime()
+
+  const currentOrUpcoming = rounds.find(
+    (round) => new Date(round.lastKickoffAt).getTime() >= nowTimestamp,
+  )
+
+  if (currentOrUpcoming) {
+    return currentOrUpcoming
+  }
+
+  return rounds[rounds.length - 1]
 }
