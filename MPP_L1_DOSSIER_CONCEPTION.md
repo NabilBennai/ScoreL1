@@ -303,7 +303,7 @@ type MarketSnapshot = {
   }
 
   totals?: Array<{
-    line: number       // ex 2.5
+    line: number // ex 2.5
     over: number
     under: number
   }>
@@ -377,14 +377,13 @@ Pseudo-code :
 
 ```ts
 function devigPower(odds: number[]): number[] {
-  const q = odds.map(o => 1 / o)
+  const q = odds.map((o) => 1 / o)
 
-  const f = (k: number) =>
-    q.reduce((sum, qi) => sum + Math.pow(qi, k), 0) - 1
+  const f = (k: number) => q.reduce((sum, qi) => sum + Math.pow(qi, k), 0) - 1
 
   const k = bisect(f, 0.01, 10, 1e-12)
 
-  return q.map(qi => Math.pow(qi, k))
+  return q.map((qi) => Math.pow(qi, k))
 }
 ```
 
@@ -963,7 +962,7 @@ Le système doit accepter :
 ```ts
 function resultPoints(
   predictedOutcome: Outcome,
-  officialMppQuoteOrPoints: number
+  officialMppQuoteOrPoints: number,
 ): number
 ```
 
@@ -1013,16 +1012,18 @@ function expectedPoints(
   prediction: Score,
   actualDistribution: ScoreProbability[],
   rules: MppRules,
-  crowd: CrowdDistribution
+  crowd: CrowdDistribution,
 ): number {
   return actualDistribution.reduce((ev, actual) => {
-    return ev
-      + actual.probability
-      * rulesEngine.points({
+    return (
+      ev +
+      actual.probability *
+        rulesEngine.points({
           predictedScore: prediction,
           actualScore: actual.score,
-          crowd
+          crowd,
         })
+    )
   }, 0)
 }
 ```
@@ -1716,8 +1717,8 @@ Réponse :
     {
       "id": "uuid",
       "kickoffAt": "2026-09-12T19:00:00+02:00",
-      "home": {"name": "Paris SG"},
-      "away": {"name": "Lens"},
+      "home": { "name": "Paris SG" },
+      "away": { "name": "Lens" },
       "prediction": {
         "leader": "2-0",
         "balanced": "3-0",
@@ -1865,7 +1866,7 @@ CROWD MODEL       MPP RULE SET
              v
      EXPECTED POINTS
              |
-      +------+------+ 
+      +------+------+
       |      |      |
       v      v      v
    Leader Balanced Challenger
@@ -1882,34 +1883,31 @@ CROWD MODEL       MPP RULE SET
 # 30. Pseudo-code principal
 
 ```ts
-export function calculatePrediction(
-  input: CalculationInput
-): MatchPrediction {
-
+export function calculatePrediction(input: CalculationInput): MatchPrediction {
   const fairMarkets = devigAll(input.marketSnapshot)
 
   const fit = fitGoalModel({
     markets: fairMarkets,
-    fixedRho: input.modelConfig.rho
+    fixedRho: input.modelConfig.rho,
   })
 
   const grid = buildDixonColesGrid({
     lambdaHome: fit.lambdaHome,
     lambdaAway: fit.lambdaAway,
-    rho: input.modelConfig.rho
+    rho: input.modelConfig.rho,
   })
 
   const crowd = input.observedCrowd
     ? calibrateObservedCrowd(input.observedCrowd)
     : estimateCrowd({
         grid,
-        alpha: input.modelConfig.crowdAlpha
+        alpha: input.modelConfig.crowdAlpha,
       })
 
   const points = computeExpectedPointsMatrix({
     football: grid,
     crowd,
-    rules: input.rules
+    rules: input.rules,
   })
 
   const leader = chooseLeader(grid, points, crowd)
@@ -1919,7 +1917,7 @@ export function calculatePrediction(
   const confidence = computeConfidence({
     input,
     fit,
-    crowd
+    crowd,
   })
 
   return {
@@ -1931,7 +1929,7 @@ export function calculatePrediction(
     leader,
     balanced,
     challenger,
-    confidence
+    confidence,
   }
 }
 ```
@@ -2442,9 +2440,9 @@ Exemple :
     "crowdAlpha": 1.34,
     "challenger": {
       "pMin": 0.025,
-      "eta": 0.60,
-      "gamma": 0.80,
-      "delta": 0.40
+      "eta": 0.6,
+      "gamma": 0.8,
+      "delta": 0.4
     }
   }
 }
@@ -2857,10 +2855,7 @@ Entrée marché, sortie :
 
 ```ts
 {
-  lambdaHome,
-  lambdaAway,
-  loss,
-  diagnostics
+  ;(lambdaHome, lambdaAway, loss, diagnostics)
 }
 ```
 
@@ -3465,18 +3460,18 @@ Au moins une période walk-forward suffisante doit montrer :
 
 # 57. Risques
 
-| ID | Risque | Impact | Probabilité | Mitigation |
-|---|---|---:|---:|---|
-| R1 | accès insuffisant aux shares MPP | fort | fort | proxy + imports manuels + confiance |
-| R2 | règles MPP changent | fort | moyen | ruleset versionné |
-| R3 | fournisseur de cotes coûteux | moyen | fort | interface provider + CSV fallback |
-| R4 | overfit templates | fort | fort | ablation walk-forward |
-| R5 | données historiques sans timestamp | fort | moyen | ne pas les utiliser pour closing-line backtest |
-| R6 | cotes tardives périmées | moyen | fort | freshness + snapshots |
-| R7 | promus mal calibrés | moyen | moyen | marché comme ancre |
-| R8 | utilisateurs interprètent comme certitude | moyen | moyen | probabilités + confiance + disclaimers |
-| R9 | chron Vercel Hobby insuffisant | moyen | fort | Pro ou scheduler externe |
-| R10 | API tierce indisponible | moyen | moyen | cache snapshots + manual fallback |
+| ID  | Risque                                    | Impact | Probabilité | Mitigation                                     |
+| --- | ----------------------------------------- | -----: | ----------: | ---------------------------------------------- |
+| R1  | accès insuffisant aux shares MPP          |   fort |        fort | proxy + imports manuels + confiance            |
+| R2  | règles MPP changent                       |   fort |       moyen | ruleset versionné                              |
+| R3  | fournisseur de cotes coûteux              |  moyen |        fort | interface provider + CSV fallback              |
+| R4  | overfit templates                         |   fort |        fort | ablation walk-forward                          |
+| R5  | données historiques sans timestamp        |   fort |       moyen | ne pas les utiliser pour closing-line backtest |
+| R6  | cotes tardives périmées                   |  moyen |        fort | freshness + snapshots                          |
+| R7  | promus mal calibrés                       |  moyen |       moyen | marché comme ancre                             |
+| R8  | utilisateurs interprètent comme certitude |  moyen |       moyen | probabilités + confiance + disclaimers         |
+| R9  | chron Vercel Hobby insuffisant            |  moyen |        fort | Pro ou scheduler externe                       |
+| R10 | API tierce indisponible                   |  moyen |       moyen | cache snapshots + manual fallback              |
 
 ---
 
@@ -3568,9 +3563,9 @@ Au moins une période walk-forward suffisante doit montrer :
   },
   "challenger": {
     "pMin": 0.025,
-    "evRatioMin": 0.60,
-    "edgeWeight": 0.80,
-    "rarityWeight": 0.40
+    "evRatioMin": 0.6,
+    "edgeWeight": 0.8,
+    "rarityWeight": 0.4
   }
 }
 ```
@@ -3589,8 +3584,8 @@ Entrée fictive :
   "away": "Lens",
   "odds": {
     "home": 1.42,
-    "draw": 5.10,
-    "away": 7.80,
+    "draw": 5.1,
+    "away": 7.8,
     "over25": 1.55,
     "under25": 2.45
   }
@@ -3644,16 +3639,16 @@ Le produit doit fonctionner sans dépendre de réponses à ces questions grâce 
 
 # 62. Politique de données manquantes
 
-| Donnée absente | Comportement |
-|---|---|
-| 1X2 | pas de calcul |
-| O/U | calcul 1X2-only, confiance réduite |
-| BTTS | aucune pénalité forte |
-| crowd réel | proxy crowd |
-| règles MPP | bloquer EV officiel, afficher seulement football |
-| snapshot récent | afficher stale |
-| rho calibré | rho=0 |
-| historique clubs | aucune incidence V1 |
+| Donnée absente   | Comportement                                     |
+| ---------------- | ------------------------------------------------ |
+| 1X2              | pas de calcul                                    |
+| O/U              | calcul 1X2-only, confiance réduite               |
+| BTTS             | aucune pénalité forte                            |
+| crowd réel       | proxy crowd                                      |
+| règles MPP       | bloquer EV officiel, afficher seulement football |
+| snapshot récent  | afficher stale                                   |
+| rho calibré      | rho=0                                            |
+| historique clubs | aucune incidence V1                              |
 
 ---
 
@@ -3846,7 +3841,7 @@ https://scoreparfait.fr/faq.html
 https://scoreparfait.fr/glossaire.html
 
 **[S5] Dixon, M. J. & Coles, S. G. (1997)**  
-*Modelling Association Football Scores and Inefficiencies in the Football Betting Market.*  
+_Modelling Association Football Scores and Inefficiencies in the Football Betting Market._  
 Journal of the Royal Statistical Society: Series C, 46(2), 265–280.  
 https://doi.org/10.1111/1467-9876.00065
 

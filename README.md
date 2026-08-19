@@ -4,9 +4,9 @@ Application web de recommandation de scores exacts pour **Mon Petit Prono Ligue 
 
 Le projet transforme les cotes du marché en probabilités de scores exacts, estime la popularité probable de chaque score dans le peloton MPP, puis propose trois stratégies :
 
-* **Leader** : le score le plus probable ;
-* **Équilibré** : le score maximisant l'espérance de points ;
-* **Challenger** : un score plus différenciant, mais restant suffisamment plausible.
+- **Leader** : le score le plus probable ;
+- **Équilibré** : le score maximisant l'espérance de points ;
+- **Challenger** : un score plus différenciant, mais restant suffisamment plausible.
 
 L'application est pensée pour être **simple, testable et rapide à déployer sur Vercel**.
 
@@ -16,32 +16,32 @@ L'application est pensée pour être **simple, testable et rapide à déployer s
 
 ### MVP
 
-* Import des matchs de Ligue 1
-* Import manuel ou CSV des cotes
-* Dévigoration des probabilités bookmakers
-* Modèle Poisson
-* Correction Dixon–Coles
-* Estimation des buts attendus domicile / extérieur
-* Distribution complète des scores exacts
-* Modèle du peloton MPP
-* Calcul de l'espérance de points
-* Recommandations Leader / Équilibré / Challenger
-* Page par journée
-* Fiche détaillée par match
-* Historisation immuable des prédictions
-* Backtest walk-forward
-* Déploiement Vercel
+- Import des matchs de Ligue 1
+- Import manuel ou CSV des cotes
+- Dévigoration des probabilités bookmakers
+- Modèle Poisson
+- Correction Dixon–Coles
+- Estimation des buts attendus domicile / extérieur
+- Distribution complète des scores exacts
+- Modèle du peloton MPP
+- Calcul de l'espérance de points
+- Recommandations Leader / Équilibré / Challenger
+- Page par journée
+- Fiche détaillée par match
+- Historisation immuable des prédictions
+- Backtest walk-forward
+- Déploiement Vercel
 
 ### Évolutions prévues
 
-* Import automatique des cotes
-* Calibration du peloton à partir de données MPP réelles
-* Modèle dynamique des forces des clubs
-* Régimes spécifiques Ligue 1
-* Race Engine basé sur le classement privé
-* Simulations Monte Carlo
-* Comptes utilisateurs
-* Historique personnel des pronostics
+- Import automatique des cotes
+- Calibration du peloton à partir de données MPP réelles
+- Modèle dynamique des forces des clubs
+- Régimes spécifiques Ligue 1
+- Race Engine basé sur le classement privé
+- Simulations Monte Carlo
+- Comptes utilisateurs
+- Historique personnel des pronostics
 
 ---
 
@@ -281,10 +281,10 @@ sequenceDiagram
 
 ## Prérequis
 
-* Node.js
-* npm
-* un projet Supabase
-* un compte Vercel pour le déploiement
+- Node.js
+- npm
+- un projet Supabase
+- un compte Vercel pour le déploiement
 
 ## Cloner le repository
 
@@ -512,8 +512,8 @@ Y \sim Poisson(\lambda_A)
 
 avec :
 
-* (\lambda_H) : buts attendus à domicile ;
-* (\lambda_A) : buts attendus à l'extérieur.
+- (\lambda_H) : buts attendus à domicile ;
+- (\lambda_A) : buts attendus à l'extérieur.
 
 La probabilité du score (i-j) vaut :
 
@@ -567,10 +567,10 @@ sont obtenus en recherchant la distribution de scores qui reproduit au mieux les
 
 Exemples :
 
-* 1X2 ;
-* Over / Under 2.5 ;
-* BTTS ;
-* handicap asiatique.
+- 1X2 ;
+- Over / Under 2.5 ;
+- BTTS ;
+- handicap asiatique.
 
 ```mermaid
 flowchart LR
@@ -618,9 +618,9 @@ q_s
 
 où :
 
-* (P_s) est la probabilité football ;
-* (q_s) est la popularité estimée dans le peloton ;
-* (\alpha) contrôle la concentration du peloton.
+- (P_s) est la probabilité football ;
+- (q_s) est la popularité estimée dans le peloton ;
+- (\alpha) contrôle la concentration du peloton.
 
 Le paramètre (\alpha) doit être calibré sur les données MPP disponibles.
 
@@ -641,10 +641,10 @@ Points(s,u)
 
 Cela permet de prendre en compte :
 
-* le score exact ;
-* la bonne issue sans score exact ;
-* la rareté du score ;
-* les règles MPP en vigueur.
+- le score exact ;
+- la bonne issue sans score exact ;
+- la rareté du score ;
+- les règles MPP en vigueur.
 
 ---
 
@@ -682,10 +682,10 @@ Il constitue la stratégie par défaut.
 
 Le Challenger cherche un score :
 
-* suffisamment probable ;
-* moins joué par le peloton ;
-* avec une EV encore acceptable ;
-* offrant davantage de différenciation.
+- suffisamment probable ;
+- moins joué par le peloton ;
+- avec une EV encore acceptable ;
+- offrant davantage de différenciation.
 
 Un score peut notamment être caractérisé par :
 
@@ -701,9 +701,9 @@ edge_s
 
 Le Challenger maximise ensuite une fonction combinant :
 
-* Expected Points ;
-* edge ;
-* bonus de rareté.
+- Expected Points ;
+- edge ;
+- bonus de rareté.
 
 ---
 
@@ -738,11 +738,11 @@ Le Race Engine sera introduit dans une version ultérieure.
 
 Il adaptera la stratégie au contexte du joueur :
 
-* classement ;
-* points ;
-* écart avec le leader ;
-* nombre de matchs restants ;
-* taille de la ligue.
+- classement ;
+- points ;
+- écart avec le leader ;
+- nombre de matchs restants ;
+- taille de la ligue.
 
 ```mermaid
 flowchart TD
@@ -787,23 +787,23 @@ Une prédiction ne doit jamais utiliser une information postérieure à son cuto
 
 ## Football
 
-* Log Loss
-* Brier Score
-* calibration 1X2
-* calibration Score Exact
-* Ranked Probability Score
-* erreur de fit des marchés
+- Log Loss
+- Brier Score
+- calibration 1X2
+- calibration Score Exact
+- Ranked Probability Score
+- erreur de fit des marchés
 
 ## MPP
 
-* points moyens par match
-* points médians
-* variance
-* points cumulés
-* gain contre baseline
-* performance par stratégie
-* performance par type de match
-* performance par journée
+- points moyens par match
+- points médians
+- variance
+- points cumulés
+- gain contre baseline
+- performance par stratégie
+- performance par type de match
+- performance par journée
 
 ---
 
@@ -833,18 +833,18 @@ Une couche n'est conservée que si elle améliore les performances hors échanti
 
 Modules concernés :
 
-* Poisson
-* Dixon–Coles
-* POWER
-* optimisation des lambdas
-* probabilités 1X2
-* Over / Under
-* BTTS
-* règles MPP
-* Expected Points
-* Leader
-* Équilibré
-* Challenger
+- Poisson
+- Dixon–Coles
+- POWER
+- optimisation des lambdas
+- probabilités 1X2
+- Over / Under
+- BTTS
+- règles MPP
+- Expected Points
+- Leader
+- Équilibré
+- Challenger
 
 Lancer :
 
@@ -866,10 +866,10 @@ flowchart LR
 
 Les tests vérifient notamment :
 
-* référence au bon snapshot ;
-* somme des probabilités égale à 1 ;
-* présence des trois stratégies ;
-* immutabilité de la prédiction.
+- référence au bon snapshot ;
+- somme des probabilités égale à 1 ;
+- présence des trois stratégies ;
+- immutabilité de la prédiction.
 
 ---
 
@@ -978,74 +978,74 @@ flowchart LR
 
 ## Phase 1 — Fondations
 
-* Next.js
-* TypeScript
-* Supabase
-* CI
-* Vercel
+- Next.js
+- TypeScript
+- Supabase
+- CI
+- Vercel
 
 ## Phase 2 — Math Core
 
-* Poisson
-* Dixon–Coles
-* POWER
-* projections de marchés
-* optimisation des lambdas
+- Poisson
+- Dixon–Coles
+- POWER
+- projections de marchés
+- optimisation des lambdas
 
 ## Phase 3 — Prediction Engine
 
-* import des cotes
-* snapshots
-* calcul
-* version du modèle
-* persistance immuable
+- import des cotes
+- snapshots
+- calcul
+- version du modèle
+- persistance immuable
 
 ## Phase 4 — MPP Engine
 
-* règles MPP
-* modèle du peloton
-* Expected Points
-* Leader
-* Équilibré
-* Challenger
+- règles MPP
+- modèle du peloton
+- Expected Points
+- Leader
+- Équilibré
+- Challenger
 
 ## Phase 5 — MVP
 
-* page journée
-* fiche match
-* matrice des scores
-* confiance
-* import admin
+- page journée
+- fiche match
+- matrice des scores
+- confiance
+- import admin
 
 ## Phase 6 — Validation
 
-* données historiques
-* walk-forward
-* baselines
-* calibration
-* tests d'ablation
+- données historiques
+- walk-forward
+- baselines
+- calibration
+- tests d'ablation
 
 ## Phase 7 — Automatisation
 
-* Odds Provider
-* Cron
-* monitoring
-* gestion des données périmées
+- Odds Provider
+- Cron
+- monitoring
+- gestion des données périmées
 
 ## Phase 8 — Modèles Ligue 1
 
-* force des clubs
-* time decay
-* promus
-* régimes / templates Ligue 1
+- force des clubs
+- time decay
+- promus
+- régimes / templates Ligue 1
 
 ## Phase 9 — Race Engine
 
-* classement privé
-* niveau d'urgence
-* simulation des adversaires
-* Monte Carlo
-* optimisation de la probabilité de victoire
+- classement privé
+- niveau d'urgence
+- simulation des adversaires
+- Monte Carlo
+- optimisation de la probabilité de victoire
 
 ---
 
@@ -1059,18 +1059,18 @@ docs/CONCEPTION.md
 
 Elle contient notamment :
 
-* modèle mathématique complet ;
-* architecture ;
-* schéma de données ;
-* API ;
-* choix technologiques ;
-* ADR ;
-* stratégie de tests ;
-* backtest scientifique ;
-* calibration ;
-* backlog agile détaillé ;
-* roadmap ;
-* risques.
+- modèle mathématique complet ;
+- architecture ;
+- schéma de données ;
+- API ;
+- choix technologiques ;
+- ADR ;
+- stratégie de tests ;
+- backtest scientifique ;
+- calibration ;
+- backlog agile détaillé ;
+- roadmap ;
+- risques.
 
 ---
 
@@ -1100,11 +1100,11 @@ Une feature supplémentaire n'est intégrée que si elle améliore les performan
 
 Chaque recommandation doit pouvoir être justifiée par :
 
-* sa probabilité ;
-* son Expected Points ;
-* sa popularité estimée ;
-* sa rareté ;
-* son niveau de confiance.
+- sa probabilité ;
+- son Expected Points ;
+- sa popularité estimée ;
+- sa rareté ;
+- son niveau de confiance.
 
 ---
 
@@ -1136,14 +1136,14 @@ avant d'ajouter les modèles Ligue 1 avancés et la personnalisation.
 
 # Références
 
-* Dixon, M. J. & Coles, S. G. (1997)
-  *Modelling Association Football Scores and Inefficiencies in the Football Betting Market.*
+- Dixon, M. J. & Coles, S. G. (1997)
+  _Modelling Association Football Scores and Inefficiencies in the Football Betting Market._
 
-* Next.js
+- Next.js
   `https://nextjs.org`
 
-* Vercel
+- Vercel
   `https://vercel.com`
 
-* Supabase
+- Supabase
   `https://supabase.com`
