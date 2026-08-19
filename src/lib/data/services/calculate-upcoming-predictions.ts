@@ -10,12 +10,14 @@ type UpcomingMatch = {
 export type BatchPredictionResult = {
   matchesFound: number
   calculated: number
+  reused: number
   failed: number
   results: Array<{
     matchId: string
     kickoffAt: string
     success: boolean
     predictionId?: string
+    calculationSkipped?: boolean
     leaderScore?: string
     balancedScore?: string
     challengerScore?: string
@@ -28,10 +30,10 @@ async function getUpcomingMatches(): Promise<UpcomingMatch[]> {
     .from("matches")
     .select(
       `
-        id,
-        kickoff_at,
-        external_id
-      `,
+      id,
+      kickoff_at,
+      external_id
+    `,
     )
     .not("external_id", "is", null)
     .gte("kickoff_at", new Date().toISOString())
@@ -46,29 +48,57 @@ async function getUpcomingMatches(): Promise<UpcomingMatch[]> {
   return data ?? []
 }
 
+function formatStrategyScore(
+  strategy:
+    | string
+    | {
+        home: number
+        away: number
+      }
+    | null,
+): string {
+  if (!strategy) {
+    return "—"
+  }
+
+  if (typeof strategy === "string") {
+    return strategy
+  }
+
+  return `${strategy.home}-${strategy.away}`
+}
+
 export async function calculateUpcomingPredictions(): Promise<BatchPredictionResult> {
   const matches = await getUpcomingMatches()
 
   const results: BatchPredictionResult["results"] = []
 
   let calculated = 0
+  let reused = 0
   let failed = 0
 
   for (const match of matches) {
     try {
       const prediction = await calculateMatchPrediction(match.id)
 
+      const calculationSkipped = prediction.calculationSkipped === true
+
+      if (calculationSkipped) {
+        reused += 1
+      } else {
+        calculated += 1
+      }
+
       results.push({
         matchId: match.id,
         kickoffAt: match.kickoff_at,
         success: true,
         predictionId: prediction.predictionId,
-        leaderScore: `${prediction.strategies.leader.home}-${prediction.strategies.leader.away}`,
-        balancedScore: `${prediction.strategies.balanced.home}-${prediction.strategies.balanced.away}`,
-        challengerScore: `${prediction.strategies.challenger.home}-${prediction.strategies.challenger.away}`,
+        calculationSkipped,
+        leaderScore: formatStrategyScore(prediction.strategies.leader),
+        balancedScore: formatStrategyScore(prediction.strategies.balanced),
+        challengerScore: formatStrategyScore(prediction.strategies.challenger),
       })
-
-      calculated += 1
     } catch (error) {
       results.push({
         matchId: match.id,
@@ -84,6 +114,7 @@ export async function calculateUpcomingPredictions(): Promise<BatchPredictionRes
   return {
     matchesFound: matches.length,
     calculated,
+    reused,
     failed,
     results,
   }

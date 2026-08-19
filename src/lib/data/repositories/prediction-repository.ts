@@ -5,7 +5,7 @@ import type { FootballModelResult } from "@/lib/model/football-model"
 import type { CrowdScoreProbability } from "@/lib/model/crowd-model"
 import type { ScoreExpectedValue } from "@/lib/model/expected-value"
 
-const MODEL_VERSION = "mpp-l1-0.1.0"
+export const MODEL_VERSION = "mpp-l1-0.1.0"
 
 type MppPredictionData = {
   crowd: CrowdScoreProbability[]
@@ -15,25 +15,38 @@ type MppPredictionData = {
   challengerScore: string
 }
 
+type SnapshotOptions = {
+  reuseByContent?: boolean
+}
+
 function hashPayload(payload: unknown): string {
   return createHash("sha256").update(JSON.stringify(payload)).digest("hex")
 }
 
-async function getOrCreateOddsSnapshot(
+export async function getOrCreateOddsSnapshot(
   input: CalculatePredictionInput,
+  options: SnapshotOptions = {},
 ): Promise<string> {
   const contentHash = hashPayload(input.odds)
 
-  const { data: existingSnapshot, error: existingSnapshotError } =
-    await supabaseServer
-      .from("odds_snapshots")
-      .select("id")
-      .eq("match_id", input.matchId)
-      .eq("provider", input.provider)
-      .eq("bookmaker", input.bookmaker ?? null)
-      .eq("captured_at", input.capturedAt)
-      .eq("content_hash", contentHash)
-      .maybeSingle()
+  let lookup = supabaseServer
+    .from("odds_snapshots")
+    .select("id")
+    .eq("match_id", input.matchId)
+    .eq("provider", input.provider)
+    .eq("bookmaker", input.bookmaker ?? null)
+    .eq("content_hash", contentHash)
+
+  if (!options.reuseByContent) {
+    lookup = lookup.eq("captured_at", input.capturedAt)
+  }
+
+  const { data: existingSnapshot, error: existingSnapshotError } = await lookup
+    .order("captured_at", {
+      ascending: false,
+    })
+    .limit(1)
+    .maybeSingle()
 
   if (existingSnapshotError) {
     throw new Error(
@@ -67,14 +80,59 @@ async function getOrCreateOddsSnapshot(
   return snapshot.id
 }
 
-async function getExistingPredictionId(
+export async function getOrCreateModelVersion(
+  result?: FootballModelResult,
+): Promise<string> {
+  const config = result
+    ? {
+        rho: result.rho,
+        gridMaxGoals: 12,
+        devig: "POWER",
+      }
+    : {
+        rho: 0,
+        gridMaxGoals: 12,
+        devig: "POWER",
+      }
+
+  const { data, error } = await supabaseServer
+    .from("model_versions")
+    .upsert(
+      {
+        version: MODEL_VERSION,
+        config,
+      },
+      {
+        onConflict: "version",
+      },
+    )
+    .select("id")
+    .single()
+
+  if (error || !data) {
+    throw new Error(
+      `Unable to persist model version: ${error?.message ?? "unknown error"}`,
+    )
+  }
+
+  return data.id
+}
+
+export async function getExistingPrediction(
   matchId: string,
   oddsSnapshotId: string,
   modelVersionId: string,
-): Promise<string | null> {
+) {
   const { data, error } = await supabaseServer
     .from("predictions")
-    .select("id")
+    .select(
+      `
+      id,
+      leader_score,
+      balanced_score,
+      challenger_score
+    `,
+    )
     .eq("match_id", matchId)
     .eq("odds_snapshot_id", oddsSnapshotId)
     .eq("model_version_id", modelVersionId)
@@ -84,51 +142,35 @@ async function getExistingPredictionId(
     throw new Error(`Unable to look up existing prediction: ${error.message}`)
   }
 
-  return data?.id ?? null
+  return data
 }
 
 export async function persistPrediction(
   input: CalculatePredictionInput,
   result: FootballModelResult,
   mpp: MppPredictionData,
+  prepared?: {
+    oddsSnapshotId?: string
+    modelVersionId?: string
+  },
 ) {
-  const oddsSnapshotId = await getOrCreateOddsSnapshot(input)
+  const oddsSnapshotId =
+    prepared?.oddsSnapshotId ?? (await getOrCreateOddsSnapshot(input))
 
-  const { data: modelVersion, error: modelVersionError } = await supabaseServer
-    .from("model_versions")
-    .upsert(
-      {
-        version: MODEL_VERSION,
-        config: {
-          rho: result.rho,
-          gridMaxGoals: 12,
-          devig: "POWER",
-        },
-      },
-      {
-        onConflict: "version",
-      },
-    )
-    .select("id")
-    .single()
+  const modelVersionId =
+    prepared?.modelVersionId ?? (await getOrCreateModelVersion(result))
 
-  if (modelVersionError || !modelVersion) {
-    throw new Error(
-      `Unable to persist model version: ${modelVersionError?.message ?? "unknown error"}`,
-    )
-  }
-
-  const existingPredictionId = await getExistingPredictionId(
+  const existingPrediction = await getExistingPrediction(
     input.matchId,
     oddsSnapshotId,
-    modelVersion.id,
+    modelVersionId,
   )
 
-  if (existingPredictionId) {
+  if (existingPrediction) {
     return {
-      predictionId: existingPredictionId,
+      predictionId: existingPrediction.id,
       oddsSnapshotId,
-      modelVersionId: modelVersion.id,
+      modelVersionId,
       predictionCreated: false,
     }
   }
@@ -140,7 +182,7 @@ export async function persistPrediction(
     .insert({
       match_id: input.matchId,
       odds_snapshot_id: oddsSnapshotId,
-      model_version_id: modelVersion.id,
+      model_version_id: modelVersionId,
       calculated_at: now,
       cutoff_at: input.capturedAt,
       lambda_home: result.lambdaHome,
@@ -159,17 +201,17 @@ export async function persistPrediction(
 
   if (predictionError || !prediction) {
     if (predictionError?.code === "23505") {
-      const concurrentPredictionId = await getExistingPredictionId(
+      const concurrentPrediction = await getExistingPrediction(
         input.matchId,
         oddsSnapshotId,
-        modelVersion.id,
+        modelVersionId,
       )
 
-      if (concurrentPredictionId) {
+      if (concurrentPrediction) {
         return {
-          predictionId: concurrentPredictionId,
+          predictionId: concurrentPrediction.id,
           oddsSnapshotId,
-          modelVersionId: modelVersion.id,
+          modelVersionId,
           predictionCreated: false,
         }
       }
@@ -183,7 +225,7 @@ export async function persistPrediction(
   return {
     predictionId: prediction.id,
     oddsSnapshotId,
-    modelVersionId: modelVersion.id,
+    modelVersionId,
     predictionCreated: true,
   }
 }

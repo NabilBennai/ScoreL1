@@ -8,11 +8,57 @@ import {
   chooseLeader,
 } from "@/lib/model/strategies"
 import { getLatestMarketConsensusForMatch } from "@/lib/data/repositories/market-consensus-repository"
-import { persistPrediction } from "@/lib/data/repositories/prediction-repository"
+import {
+  getExistingPrediction,
+  getOrCreateModelVersion,
+  getOrCreateOddsSnapshot,
+  persistPrediction,
+} from "@/lib/data/repositories/prediction-repository"
 
 export async function calculateMatchPrediction(matchId: string) {
   const { consensus, capturedAt } =
     await getLatestMarketConsensusForMatch(matchId)
+
+  const input = {
+    matchId,
+    provider: "the-odds-api-consensus",
+    bookmaker: "consensus",
+    capturedAt,
+    odds: {
+      oneXTwo: consensus.oneXTwo,
+      over25: consensus.over25,
+      btts: consensus.btts,
+    },
+  }
+
+  const oddsSnapshotId = await getOrCreateOddsSnapshot(input, {
+    reuseByContent: true,
+  })
+
+  const modelVersionId = await getOrCreateModelVersion()
+
+  const existingPrediction = await getExistingPrediction(
+    matchId,
+    oddsSnapshotId,
+    modelVersionId,
+  )
+
+  if (existingPrediction) {
+    return {
+      predictionId: existingPrediction.id,
+      oddsSnapshotId,
+      modelVersionId,
+      predictionCreated: false,
+      calculationSkipped: true,
+      bookmakerCount: consensus.bookmakerCount,
+      crowdAlpha: DEV_MPP_CONFIG.crowdAlpha,
+      strategies: {
+        leader: existingPrediction.leader_score,
+        balanced: existingPrediction.balanced_score,
+        challenger: existingPrediction.challenger_score,
+      },
+    }
+  }
 
   const football = calculateFootballModel({
     oneXTwoOdds: consensus.oneXTwo,
@@ -38,17 +84,7 @@ export async function calculateMatchPrediction(matchId: string) {
   const challenger = chooseChallenger(expectedValues, balanced)
 
   const persisted = await persistPrediction(
-    {
-      matchId,
-      provider: "the-odds-api-consensus",
-      bookmaker: "consensus",
-      capturedAt,
-      odds: {
-        oneXTwo: consensus.oneXTwo,
-        over25: consensus.over25,
-        btts: consensus.btts,
-      },
-    },
+    input,
     football,
     {
       crowd,
@@ -57,22 +93,23 @@ export async function calculateMatchPrediction(matchId: string) {
       balancedScore: `${balanced.home}-${balanced.away}`,
       challengerScore: `${challenger.home}-${challenger.away}`,
     },
+    {
+      oddsSnapshotId,
+      modelVersionId,
+    },
   )
 
   return {
     ...persisted,
-
+    calculationSkipped: false,
     bookmakerCount: consensus.bookmakerCount,
-
     crowdAlpha: DEV_MPP_CONFIG.crowdAlpha,
-
     model: {
       lambdaHome: football.lambdaHome,
       lambdaAway: football.lambdaAway,
       rho: football.rho,
       fitLoss: football.fitLoss,
     },
-
     strategies: {
       leader,
       balanced,
