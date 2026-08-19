@@ -30,6 +30,7 @@ async function getOrCreateOddsSnapshot(
       .select("id")
       .eq("match_id", input.matchId)
       .eq("provider", input.provider)
+      .eq("bookmaker", input.bookmaker ?? null)
       .eq("captured_at", input.capturedAt)
       .eq("content_hash", contentHash)
       .maybeSingle()
@@ -66,6 +67,26 @@ async function getOrCreateOddsSnapshot(
   return snapshot.id
 }
 
+async function getExistingPredictionId(
+  matchId: string,
+  oddsSnapshotId: string,
+  modelVersionId: string,
+): Promise<string | null> {
+  const { data, error } = await supabaseServer
+    .from("predictions")
+    .select("id")
+    .eq("match_id", matchId)
+    .eq("odds_snapshot_id", oddsSnapshotId)
+    .eq("model_version_id", modelVersionId)
+    .maybeSingle()
+
+  if (error) {
+    throw new Error(`Unable to look up existing prediction: ${error.message}`)
+  }
+
+  return data?.id ?? null
+}
+
 export async function persistPrediction(
   input: CalculatePredictionInput,
   result: FootballModelResult,
@@ -97,6 +118,21 @@ export async function persistPrediction(
     )
   }
 
+  const existingPredictionId = await getExistingPredictionId(
+    input.matchId,
+    oddsSnapshotId,
+    modelVersion.id,
+  )
+
+  if (existingPredictionId) {
+    return {
+      predictionId: existingPredictionId,
+      oddsSnapshotId,
+      modelVersionId: modelVersion.id,
+      predictionCreated: false,
+    }
+  }
+
   const now = new Date().toISOString()
 
   const { data: prediction, error: predictionError } = await supabaseServer
@@ -122,6 +158,23 @@ export async function persistPrediction(
     .single()
 
   if (predictionError || !prediction) {
+    if (predictionError?.code === "23505") {
+      const concurrentPredictionId = await getExistingPredictionId(
+        input.matchId,
+        oddsSnapshotId,
+        modelVersion.id,
+      )
+
+      if (concurrentPredictionId) {
+        return {
+          predictionId: concurrentPredictionId,
+          oddsSnapshotId,
+          modelVersionId: modelVersion.id,
+          predictionCreated: false,
+        }
+      }
+    }
+
     throw new Error(
       `Unable to persist prediction: ${predictionError?.message ?? "unknown error"}`,
     )
@@ -131,5 +184,6 @@ export async function persistPrediction(
     predictionId: prediction.id,
     oddsSnapshotId,
     modelVersionId: modelVersion.id,
+    predictionCreated: true,
   }
 }
