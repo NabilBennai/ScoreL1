@@ -46,24 +46,27 @@ export function calculateHistoricalPrediction(
   row: HistoricalMarketRow,
 ): HistoricalPredictionResult {
   const model = calculateFootballModel({
-    oneXTwo: row.odds.oneXTwo,
-    over25: row.odds.over25,
-    btts: row.odds.btts,
+    oneXTwoOdds: row.odds.oneXTwo,
+    over25Odds: row.odds.over25,
+    bttsOdds: row.odds.btts,
   })
 
-  const crowd = estimateCrowd(model.scores, DEV_MPP_CONFIG.crowdAlpha)
+  const crowd = estimateCrowd(
+    model.scoreProbabilities,
+    DEV_MPP_CONFIG.crowdAlpha,
+  )
 
   const expectedValues = calculateExpectedValues(
-    model.scores,
+    model.scoreProbabilities,
     crowd,
     DEV_MPP_CONFIG.rules,
   )
 
-  const leader = chooseLeader(model.scores)
+  const leader = chooseLeader(expectedValues)
 
   const balanced = chooseBalanced(expectedValues)
 
-  const challenger = chooseChallenger(expectedValues)
+  const challenger = chooseChallenger(expectedValues, balanced)
 
   return {
     prediction: {
@@ -102,7 +105,7 @@ export function calculateHistoricalPrediction(
       lambdaHome: model.lambdaHome,
       lambdaAway: model.lambdaAway,
       rho: model.rho,
-      marketFitLoss: model.marketFitLoss,
+      marketFitLoss: model.fitLoss,
     },
   }
 }
