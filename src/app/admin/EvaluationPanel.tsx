@@ -5,6 +5,7 @@ import { useEffect, useState } from "react"
 type StrategyMetrics = {
   exactScores: number
   correctOutcomes: number
+  totalPoints: number
 }
 
 type EvaluationResponse = {
@@ -24,6 +25,14 @@ function percentage(value: number, total: number): string {
   return `${((value / total) * 100).toFixed(1)} %`
 }
 
+function average(value: number, total: number): string {
+  if (total === 0) {
+    return "0.0"
+  }
+
+  return (value / total).toFixed(1)
+}
+
 function StrategyCard({
   title,
   metrics,
@@ -37,7 +46,17 @@ function StrategyCard({
     <div className="rounded-xl border p-5">
       <h3 className="text-lg font-semibold">{title}</h3>
 
-      <div className="mt-4 space-y-4">
+      <div className="mt-4 space-y-5">
+        <div>
+          <p className="text-sm text-zinc-500">Points MPP</p>
+
+          <p className="mt-1 text-2xl font-bold">{metrics.totalPoints}</p>
+
+          <p className="text-sm text-zinc-500">
+            {average(metrics.totalPoints, total)} pts / match
+          </p>
+        </div>
+
         <div>
           <p className="text-sm text-zinc-500">Scores exacts</p>
 
@@ -64,6 +83,31 @@ function StrategyCard({
       </div>
     </div>
   )
+}
+
+function getBestStrategy(data: EvaluationResponse): string | null {
+  if (data.matchesEvaluated === 0) {
+    return null
+  }
+
+  const strategies = [
+    {
+      name: "Leader",
+      points: data.leader.totalPoints,
+    },
+    {
+      name: "Équilibré",
+      points: data.balanced.totalPoints,
+    },
+    {
+      name: "Challenger",
+      points: data.challenger.totalPoints,
+    },
+  ]
+
+  strategies.sort((a, b) => b.points - a.points)
+
+  return strategies[0].name
 }
 
 export default function EvaluationPanel() {
@@ -117,6 +161,8 @@ export default function EvaluationPanel() {
     )
   }
 
+  const bestStrategy = getBestStrategy(data)
+
   return (
     <section>
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
@@ -128,12 +174,26 @@ export default function EvaluationPanel() {
           </p>
         </div>
 
-        <div className="rounded-lg bg-zinc-100 px-4 py-3">
-          <p className="text-xs text-zinc-500">Matchs évalués</p>
+        <div className="flex gap-3">
+          <div className="rounded-lg bg-zinc-100 px-4 py-3">
+            <p className="text-xs text-zinc-500">Matchs évalués</p>
 
-          <p className="text-xl font-semibold">{data.matchesEvaluated}</p>
+            <p className="text-xl font-semibold">{data.matchesEvaluated}</p>
+          </div>
+
+          {bestStrategy && (
+            <div className="rounded-lg bg-zinc-900 px-4 py-3 text-white">
+              <p className="text-xs text-zinc-300">Meilleure stratégie</p>
+
+              <p className="text-xl font-semibold">{bestStrategy}</p>
+            </div>
+          )}
         </div>
       </div>
+
+      <p className="mt-3 text-xs text-zinc-500">
+        Les points affichés utilisent actuellement les règles DEV MPP.
+      </p>
 
       {data.matchesEvaluated === 0 ? (
         <div className="mt-5 rounded-xl border p-6">

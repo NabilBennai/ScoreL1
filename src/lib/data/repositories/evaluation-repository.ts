@@ -1,39 +1,92 @@
 import { supabaseServer } from "@/lib/data/supabase/server"
+import { DEV_MPP_CONFIG } from "@/lib/model/mpp-config"
 import {
   evaluatePrediction,
   parseScore,
 } from "@/lib/model/prediction-evaluation"
+import { calculateRealizedMppPoints } from "@/lib/model/realized-mpp-points"
+
+type CrowdProbability = {
+  home: number
+  away: number
+  probability: number
+}
 
 type FinishedMatchRow = {
   id: string
   home_goals: number | null
   away_goals: number | null
+
   predictions: Array<{
     id: string
     calculated_at: string
     leader_score: string | null
     balanced_score: string | null
     challenger_score: string | null
+    crowd_probabilities: unknown
   }> | null
+}
+
+export type StrategyEvaluationSummary = {
+  exactScores: number
+  correctOutcomes: number
+  totalPoints: number
 }
 
 export type EvaluationSummary = {
   matchesEvaluated: number
 
-  leader: {
-    exactScores: number
-    correctOutcomes: number
+  leader: StrategyEvaluationSummary
+  balanced: StrategyEvaluationSummary
+  challenger: StrategyEvaluationSummary
+}
+
+function createStrategySummary(): StrategyEvaluationSummary {
+  return {
+    exactScores: 0,
+    correctOutcomes: 0,
+    totalPoints: 0,
+  }
+}
+
+function isCrowdProbability(value: unknown): value is CrowdProbability {
+  if (typeof value !== "object" || value === null) {
+    return false
   }
 
-  balanced: {
-    exactScores: number
-    correctOutcomes: number
+  const row = value as Record<string, unknown>
+
+  return (
+    Number.isInteger(row.home) &&
+    Number.isInteger(row.away) &&
+    typeof row.probability === "number" &&
+    Number.isFinite(row.probability) &&
+    row.probability >= 0 &&
+    row.probability <= 1
+  )
+}
+
+function parseCrowdProbabilities(value: unknown): CrowdProbability[] {
+  if (!Array.isArray(value)) {
+    return []
   }
 
-  challenger: {
-    exactScores: number
-    correctOutcomes: number
-  }
+  return value.filter(isCrowdProbability)
+}
+
+function getCrowdShare(
+  probabilities: CrowdProbability[],
+  score: {
+    home: number
+    away: number
+  },
+): number | null {
+  const row = probabilities.find(
+    (probability) =>
+      probability.home === score.home && probability.away === score.away,
+  )
+
+  return row?.probability ?? null
 }
 
 export async function getPredictionEvaluationSummary(): Promise<EvaluationSummary> {
@@ -49,7 +102,8 @@ export async function getPredictionEvaluationSummary(): Promise<EvaluationSummar
         calculated_at,
         leader_score,
         balanced_score,
-        challenger_score
+        challenger_score,
+        crowd_probabilities
       )
     `,
     )
@@ -63,21 +117,9 @@ export async function getPredictionEvaluationSummary(): Promise<EvaluationSummar
 
   const summary: EvaluationSummary = {
     matchesEvaluated: 0,
-
-    leader: {
-      exactScores: 0,
-      correctOutcomes: 0,
-    },
-
-    balanced: {
-      exactScores: 0,
-      correctOutcomes: 0,
-    },
-
-    challenger: {
-      exactScores: 0,
-      correctOutcomes: 0,
-    },
+    leader: createStrategySummary(),
+    balanced: createStrategySummary(),
+    challenger: createStrategySummary(),
   }
 
   for (const match of (data ?? []) as FinishedMatchRow[]) {
@@ -105,16 +147,60 @@ export async function getPredictionEvaluationSummary(): Promise<EvaluationSummar
       continue
     }
 
-    const evaluation = evaluatePrediction(
-      {
-        home: match.home_goals,
-        away: match.away_goals,
-      },
-      {
-        leader: parseScore(latestPrediction.leader_score),
-        balanced: parseScore(latestPrediction.balanced_score),
-        challenger: parseScore(latestPrediction.challenger_score),
-      },
+    const leader = parseScore(latestPrediction.leader_score)
+
+    const balanced = parseScore(latestPrediction.balanced_score)
+
+    const challenger = parseScore(latestPrediction.challenger_score)
+
+    const actual = {
+      home: match.home_goals,
+      away: match.away_goals,
+    }
+
+    const evaluation = evaluatePrediction(actual, {
+      leader,
+      balanced,
+      challenger,
+    })
+
+    const crowdProbabilities = parseCrowdProbabilities(
+      latestPrediction.crowd_probabilities,
+    )
+
+    const leaderCrowdShare = getCrowdShare(crowdProbabilities, leader)
+
+    const balancedCrowdShare = getCrowdShare(crowdProbabilities, balanced)
+
+    const challengerCrowdShare = getCrowdShare(crowdProbabilities, challenger)
+
+    if (
+      leaderCrowdShare === null ||
+      balancedCrowdShare === null ||
+      challengerCrowdShare === null
+    ) {
+      continue
+    }
+
+    const leaderPoints = calculateRealizedMppPoints(
+      leader,
+      actual,
+      leaderCrowdShare,
+      DEV_MPP_CONFIG.rules,
+    )
+
+    const balancedPoints = calculateRealizedMppPoints(
+      balanced,
+      actual,
+      balancedCrowdShare,
+      DEV_MPP_CONFIG.rules,
+    )
+
+    const challengerPoints = calculateRealizedMppPoints(
+      challenger,
+      actual,
+      challengerCrowdShare,
+      DEV_MPP_CONFIG.rules,
     )
 
     summary.matchesEvaluated += 1
@@ -127,6 +213,8 @@ export async function getPredictionEvaluationSummary(): Promise<EvaluationSummar
       summary.leader.correctOutcomes += 1
     }
 
+    summary.leader.totalPoints += leaderPoints.points
+
     if (evaluation.balanced.exactScore) {
       summary.balanced.exactScores += 1
     }
@@ -135,6 +223,8 @@ export async function getPredictionEvaluationSummary(): Promise<EvaluationSummar
       summary.balanced.correctOutcomes += 1
     }
 
+    summary.balanced.totalPoints += balancedPoints.points
+
     if (evaluation.challenger.exactScore) {
       summary.challenger.exactScores += 1
     }
@@ -142,6 +232,8 @@ export async function getPredictionEvaluationSummary(): Promise<EvaluationSummar
     if (evaluation.challenger.correctOutcome) {
       summary.challenger.correctOutcomes += 1
     }
+
+    summary.challenger.totalPoints += challengerPoints.points
   }
 
   return summary
