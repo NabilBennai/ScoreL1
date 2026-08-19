@@ -1,7 +1,7 @@
 import { calculateFootballModel } from "@/lib/model/football-model"
 import { estimateCrowd } from "@/lib/model/crowd-model"
 import { calculateExpectedValues } from "@/lib/model/expected-value"
-import type { MppRules } from "@/lib/model/mpp-rules"
+import { DEV_MPP_CONFIG } from "@/lib/model/mpp-config"
 import {
   chooseBalanced,
   chooseChallenger,
@@ -9,32 +9,6 @@ import {
 } from "@/lib/model/strategies"
 import { getLatestMarketConsensusForMatch } from "@/lib/data/repositories/market-consensus-repository"
 import { persistPrediction } from "@/lib/data/repositories/prediction-repository"
-
-const DEV_MPP_RULES: MppRules = {
-  correctOutcomePoints: 10,
-  rarityTiers: [
-    {
-      maxShareExclusive: 0.005,
-      bonus: 100,
-    },
-    {
-      maxShareExclusive: 0.05,
-      bonus: 70,
-    },
-    {
-      maxShareExclusive: 0.2,
-      bonus: 50,
-    },
-    {
-      maxShareExclusive: 0.3,
-      bonus: 30,
-    },
-    {
-      maxShareExclusive: 1.01,
-      bonus: 20,
-    },
-  ],
-}
 
 export async function calculateMatchPrediction(matchId: string) {
   const { consensus, capturedAt } =
@@ -46,15 +20,19 @@ export async function calculateMatchPrediction(matchId: string) {
     bttsOdds: consensus.btts,
   })
 
-  const crowd = estimateCrowd(football.scoreProbabilities, 1)
+  const crowd = estimateCrowd(
+    football.scoreProbabilities,
+    DEV_MPP_CONFIG.crowdAlpha,
+  )
 
   const expectedValues = calculateExpectedValues(
     football.scoreProbabilities,
     crowd,
-    DEV_MPP_RULES,
+    DEV_MPP_CONFIG.rules,
   )
 
   const leader = chooseLeader(expectedValues)
+
   const balanced = chooseBalanced(expectedValues)
 
   const challenger = chooseChallenger(expectedValues, balanced)
@@ -83,13 +61,18 @@ export async function calculateMatchPrediction(matchId: string) {
 
   return {
     ...persisted,
+
     bookmakerCount: consensus.bookmakerCount,
+
+    crowdAlpha: DEV_MPP_CONFIG.crowdAlpha,
+
     model: {
       lambdaHome: football.lambdaHome,
       lambdaAway: football.lambdaAway,
       rho: football.rho,
       fitLoss: football.fitLoss,
     },
+
     strategies: {
       leader,
       balanced,
