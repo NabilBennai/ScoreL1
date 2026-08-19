@@ -2,9 +2,11 @@ import { TheOddsApiProvider } from "@/lib/data/providers/the-odds-api"
 import {
   getSeasonId,
   loadTeamIndex,
-  persistProviderOddsSnapshot,
+  persistProviderOddsSnapshots,
   resolveProviderTeam,
-  upsertProviderFixture,
+  upsertProviderFixtures,
+  type ResolvedProviderFixture,
+  type SnapshotCandidate,
 } from "@/lib/data/repositories/provider-sync-repository"
 
 const SEASON_CODE = "2026-2027"
@@ -27,17 +29,13 @@ export async function syncTheOddsApi(): Promise<OddsSyncResult> {
   const seasonId = await getSeasonId(SEASON_CODE)
   const teams = await loadTeamIndex()
 
-  const eventIds = new Set<string>()
-  const syncedFixtureIds = new Set<string>()
   const unmappedTeams = new Set<string>()
 
-  let snapshotsCreated = 0
-  let snapshotsReused = 0
+  const fixtureMap = new Map<string, ResolvedProviderFixture>()
+
   let skippedRows = 0
 
   for (const odds of oddsRows) {
-    eventIds.add(odds.externalId)
-
     const homeTeam = resolveProviderTeam(odds.homeTeam, teams)
 
     const awayTeam = resolveProviderTeam(odds.awayTeam, teams)
@@ -55,31 +53,47 @@ export async function syncTheOddsApi(): Promise<OddsSyncResult> {
       continue
     }
 
-    const fixture = await upsertProviderFixture({
-      seasonId,
-      externalId: odds.externalId,
-      commenceTime: odds.commenceTime,
-      homeTeamId: homeTeam.id,
-      awayTeamId: awayTeam.id,
-    })
-
-    syncedFixtureIds.add(fixture.matchId)
-
-    const snapshot = await persistProviderOddsSnapshot(fixture.matchId, odds)
-
-    if (snapshot.created) {
-      snapshotsCreated += 1
-    } else {
-      snapshotsReused += 1
+    if (!fixtureMap.has(odds.externalId)) {
+      fixtureMap.set(odds.externalId, {
+        externalId: odds.externalId,
+        commenceTime: odds.commenceTime,
+        homeTeamId: homeTeam.id,
+        awayTeamId: awayTeam.id,
+      })
     }
   }
 
+  const fixtures = await upsertProviderFixtures(seasonId, [
+    ...fixtureMap.values(),
+  ])
+
+  const matchIdByExternalId = new Map(
+    fixtures.map((fixture) => [fixture.externalId, fixture.id]),
+  )
+
+  const snapshotCandidates: SnapshotCandidate[] = []
+
+  for (const odds of oddsRows) {
+    const matchId = matchIdByExternalId.get(odds.externalId)
+
+    if (!matchId) {
+      continue
+    }
+
+    snapshotCandidates.push({
+      matchId,
+      odds,
+    })
+  }
+
+  const snapshots = await persistProviderOddsSnapshots(snapshotCandidates)
+
   return {
     providerRows: oddsRows.length,
-    eventsSeen: eventIds.size,
-    fixturesSynced: syncedFixtureIds.size,
-    snapshotsCreated,
-    snapshotsReused,
+    eventsSeen: new Set(oddsRows.map((odds) => odds.externalId)).size,
+    fixturesSynced: fixtures.length,
+    snapshotsCreated: snapshots.created,
+    snapshotsReused: snapshots.reused,
     skippedRows,
     unmappedTeams: [...unmappedTeams].sort(),
   }
