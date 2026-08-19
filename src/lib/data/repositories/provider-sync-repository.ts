@@ -114,7 +114,6 @@ export async function upsertProviderFixtures(
   const rows = fixtures.map((fixture) => ({
     season_id: seasonId,
     external_id: fixture.externalId,
-    round: null,
     kickoff_at: fixture.commenceTime,
     home_team_id: fixture.homeTeamId,
     away_team_id: fixture.awayTeamId,
@@ -212,11 +211,11 @@ export async function persistProviderOddsSnapshots(
     .from("odds_snapshots")
     .select(
       `
-          match_id,
-          bookmaker,
-          captured_at,
-          content_hash
-        `,
+        match_id,
+        bookmaker,
+        captured_at,
+        content_hash
+      `,
     )
     .eq("provider", "the-odds-api")
     .in("match_id", matchIds)
