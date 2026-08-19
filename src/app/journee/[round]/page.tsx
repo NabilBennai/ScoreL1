@@ -407,7 +407,7 @@ export default async function RoundPage({ params }: PageProps) {
 
                   {prediction ? (
                     <>
-                      <div className="grid grid-cols-3 gap-3">
+                      <div className="grid grid-cols-2 gap-3">
                         <PredictionScore
                           label="Leader"
                           score={prediction.leader_score}

@@ -41,10 +41,12 @@ function findExpectedValue(values: ExpectedValue[], score: string | null) {
 
 function StrategyCard({
   title,
+  description,
   score,
   value,
 }: {
   title: string
+  description: string
   score: string | null
   value: ExpectedValue | null
 }) {
@@ -53,6 +55,8 @@ function StrategyCard({
       <p className="text-sm font-medium text-zinc-500">{title}</p>
 
       <p className="mt-3 text-4xl font-bold">{score ?? "—"}</p>
+
+      <p className="mt-2 text-sm text-zinc-500">{description}</p>
 
       {value && (
         <div className="mt-4 space-y-1 text-sm text-zinc-600">
@@ -119,11 +123,6 @@ export default async function MatchPage({ params }: PageProps) {
     prediction.balanced_score,
   )
 
-  const challengerValue = findExpectedValue(
-    expectedValues,
-    prediction.challenger_score,
-  )
-
   return (
     <main className="mx-auto max-w-6xl p-8">
       <header className="mb-8">
@@ -167,25 +166,21 @@ export default async function MatchPage({ params }: PageProps) {
       </section>
 
       <section className="mt-10">
-        <h2 className="text-xl font-semibold">Stratégies MPP</h2>
+        <h2 className="text-xl font-semibold">Pronostics recommandés</h2>
 
-        <div className="mt-4 grid gap-4 md:grid-cols-3">
+        <div className="mt-4 grid gap-4 md:grid-cols-2">
           <StrategyCard
             title="Leader"
+            description="Priorité au score exact le plus probable."
             score={prediction.leader_score}
             value={leaderValue}
           />
 
           <StrategyCard
             title="Équilibré"
+            description="Compromis entre fiabilité du résultat et potentiel MPP."
             score={prediction.balanced_score}
             value={balancedValue}
-          />
-
-          <StrategyCard
-            title="Challenger"
-            score={prediction.challenger_score}
-            value={challengerValue}
           />
         </div>
       </section>

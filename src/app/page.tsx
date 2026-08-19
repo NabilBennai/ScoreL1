@@ -28,8 +28,8 @@ export default async function HomePage() {
 
         <p className="mt-4 max-w-2xl text-zinc-600">
           Le moteur combine les cotes bookmakers, un modèle Poisson/Dixon-Coles
-          et une estimation du peloton MPP pour produire trois stratégies :
-          Leader, Équilibré et Challenger.
+          et une estimation du peloton MPP pour proposer deux stratégies :
+          Leader et Équilibré.
         </p>
 
         {relevantRound && (
@@ -117,12 +117,13 @@ export default async function HomePage() {
         )}
       </section>
 
-      <section className="mt-12 grid gap-4 md:grid-cols-3">
+      <section className="mt-12 grid gap-4 md:grid-cols-2">
         <div className="rounded-xl border p-5">
           <p className="text-sm font-medium">Leader</p>
 
           <p className="mt-2 text-sm text-zinc-600">
-            Le score exact le plus probable selon le modèle.
+            Le score exact le plus probable selon le modèle. À privilégier si tu
+            veux maximiser les chances de trouver le score exact.
           </p>
         </div>
 
@@ -130,16 +131,8 @@ export default async function HomePage() {
           <p className="text-sm font-medium">Équilibré</p>
 
           <p className="mt-2 text-sm text-zinc-600">
-            Le score qui maximise l&apos;espérance de points MPP.
-          </p>
-        </div>
-
-        <div className="rounded-xl border p-5">
-          <p className="text-sm font-medium">Challenger</p>
-
-          <p className="mt-2 text-sm text-zinc-600">
-            Une option plus différenciante lorsque sa probabilité reste
-            suffisante.
+            Le meilleur compromis entre probabilité du résultat et espérance de
+            points MPP.
           </p>
         </div>
       </section>
