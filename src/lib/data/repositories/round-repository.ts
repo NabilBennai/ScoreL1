@@ -28,15 +28,18 @@ export async function getRoundMatches(round: number) {
         id,
         calculated_at,
         cutoff_at,
+        odds_snapshot_id,
         leader_score,
         balanced_score,
         challenger_score
       ),
 
       odds_snapshots (
+        id,
         bookmaker,
         captured_at,
-        provider
+        provider,
+        market_payload
       )
     `,
     )

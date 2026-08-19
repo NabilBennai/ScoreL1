@@ -1,6 +1,10 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { getRoundMatches } from "@/lib/data/repositories/round-repository"
+import {
+  buildMarketConsensus,
+  type BookmakerMarket,
+} from "@/lib/model/market-consensus"
 
 type PageProps = {
   params: Promise<{
@@ -14,20 +18,43 @@ type Team = {
   short_name: string | null
 }
 
+type MarketPayload = {
+  oneXTwo?: {
+    home: number
+    draw: number
+    away: number
+  } | null
+
+  over25?: {
+    over: number
+    under: number
+  } | null
+
+  btts?: {
+    yes: number
+    no: number
+  } | null
+}
+
 type Prediction = {
   id: string
   calculated_at: string
   cutoff_at: string
+  odds_snapshot_id: string
   leader_score: string | null
   balanced_score: string | null
   challenger_score: string | null
 }
 
 type OddsSnapshot = {
+  id: string
   bookmaker: string | null
   captured_at: string
   provider: string
+  market_payload: MarketPayload
 }
+
+type PredictionStatus = "UP_TO_DATE" | "CONSENSUS_CHANGED" | "UNKNOWN"
 
 function getSingleTeam(value: Team | Team[] | null): Team | null {
   if (!value) {
@@ -59,14 +86,33 @@ function getRawBookmakerSnapshots(
   )
 }
 
-function getRawBookmakerCount(snapshots: OddsSnapshot[] | null): number {
-  const bookmakers = new Set(
-    getRawBookmakerSnapshots(snapshots)
-      .map((snapshot) => snapshot.bookmaker)
-      .filter((bookmaker): bookmaker is string => bookmaker !== null),
+function getLatestSnapshotsByBookmaker(
+  snapshots: OddsSnapshot[] | null,
+): OddsSnapshot[] {
+  const rawSnapshots = getRawBookmakerSnapshots(snapshots)
+
+  const latest = new Map<string, OddsSnapshot>()
+
+  const sorted = [...rawSnapshots].sort(
+    (a, b) =>
+      new Date(b.captured_at).getTime() - new Date(a.captured_at).getTime(),
   )
 
-  return bookmakers.size
+  for (const snapshot of sorted) {
+    if (!snapshot.bookmaker) {
+      continue
+    }
+
+    if (!latest.has(snapshot.bookmaker)) {
+      latest.set(snapshot.bookmaker, snapshot)
+    }
+  }
+
+  return [...latest.values()]
+}
+
+function getRawBookmakerCount(snapshots: OddsSnapshot[] | null): number {
+  return getLatestSnapshotsByBookmaker(snapshots).length
 }
 
 function getLatestRawOddsAt(snapshots: OddsSnapshot[] | null): string | null {
@@ -82,18 +128,92 @@ function getLatestRawOddsAt(snapshots: OddsSnapshot[] | null): string | null {
   )[0].captured_at
 }
 
-function hasNewerOddsThanPrediction(
-  prediction: Prediction,
-  latestRawOddsAt: string | null,
-): boolean {
-  if (!latestRawOddsAt) {
-    return false
+function buildCurrentConsensus(
+  snapshots: OddsSnapshot[] | null,
+): MarketPayload | null {
+  const latestSnapshots = getLatestSnapshotsByBookmaker(snapshots)
+
+  const markets: BookmakerMarket[] = latestSnapshots.map((snapshot) => ({
+    bookmaker: snapshot.bookmaker ?? "unknown",
+
+    oneXTwo: snapshot.market_payload.oneXTwo ?? undefined,
+
+    over25: snapshot.market_payload.over25 ?? undefined,
+
+    btts: snapshot.market_payload.btts ?? undefined,
+  }))
+
+  if (markets.length === 0) {
+    return null
   }
 
+  try {
+    const consensus = buildMarketConsensus(markets)
+
+    return {
+      oneXTwo: consensus.oneXTwo,
+      over25: consensus.over25,
+      btts: consensus.btts,
+    }
+  } catch {
+    return null
+  }
+}
+
+function normalizeMarketPayload(payload: MarketPayload) {
+  return {
+    oneXTwo: payload.oneXTwo
+      ? {
+          home: payload.oneXTwo.home,
+          draw: payload.oneXTwo.draw,
+          away: payload.oneXTwo.away,
+        }
+      : null,
+
+    over25: payload.over25
+      ? {
+          over: payload.over25.over,
+          under: payload.over25.under,
+        }
+      : null,
+
+    btts: payload.btts
+      ? {
+          yes: payload.btts.yes,
+          no: payload.btts.no,
+        }
+      : null,
+  }
+}
+
+function sameMarketPayload(a: MarketPayload, b: MarketPayload): boolean {
   return (
-    new Date(latestRawOddsAt).getTime() >
-    new Date(prediction.cutoff_at).getTime()
+    JSON.stringify(normalizeMarketPayload(a)) ===
+    JSON.stringify(normalizeMarketPayload(b))
   )
+}
+
+function getPredictionStatus(
+  prediction: Prediction,
+  snapshots: OddsSnapshot[] | null,
+): PredictionStatus {
+  const predictionSnapshot = (snapshots ?? []).find(
+    (snapshot) => snapshot.id === prediction.odds_snapshot_id,
+  )
+
+  if (!predictionSnapshot) {
+    return "UNKNOWN"
+  }
+
+  const currentConsensus = buildCurrentConsensus(snapshots)
+
+  if (!currentConsensus) {
+    return "UNKNOWN"
+  }
+
+  return sameMarketPayload(predictionSnapshot.market_payload, currentConsensus)
+    ? "UP_TO_DATE"
+    : "CONSENSUS_CHANGED"
 }
 
 function formatKickoff(value: string): string {
@@ -108,6 +228,7 @@ function formatKickoff(value: string): string {
 
 function formatFreshness(value: string): string {
   const timestamp = new Date(value).getTime()
+
   const now = Date.now()
 
   const diffMinutes = Math.max(0, Math.floor((now - timestamp) / 60_000))
@@ -144,6 +265,30 @@ function PredictionScore({
 
       <p className="mt-1 text-lg font-bold">{score ?? "—"}</p>
     </div>
+  )
+}
+
+function PredictionStatusBadge({ status }: { status: PredictionStatus }) {
+  if (status === "UP_TO_DATE") {
+    return (
+      <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-800">
+        À jour
+      </span>
+    )
+  }
+
+  if (status === "CONSENSUS_CHANGED") {
+    return (
+      <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-800">
+        Consensus modifié
+      </span>
+    )
+  }
+
+  return (
+    <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-600">
+      Statut inconnu
+    </span>
   )
 }
 
@@ -206,9 +351,9 @@ export default async function RoundPage({ params }: PageProps) {
 
             const latestRawOddsAt = getLatestRawOddsAt(snapshots)
 
-            const newerOddsAvailable = prediction
-              ? hasNewerOddsThanPrediction(prediction, latestRawOddsAt)
-              : false
+            const predictionStatus = prediction
+              ? getPredictionStatus(prediction, snapshots)
+              : null
 
             return (
               <Link
@@ -249,10 +394,8 @@ export default async function RoundPage({ params }: PageProps) {
                         </span>
                       )}
 
-                      {newerOddsAvailable && (
-                        <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-800">
-                          Cotes plus récentes
-                        </span>
+                      {predictionStatus && (
+                        <PredictionStatusBadge status={predictionStatus} />
                       )}
 
                       <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs text-zinc-600">
@@ -286,7 +429,10 @@ export default async function RoundPage({ params }: PageProps) {
                           Prédiction {formatFreshness(prediction.calculated_at)}
                         </p>
 
-                        <p>Consensus {formatFreshness(prediction.cutoff_at)}</p>
+                        <p>
+                          Consensus utilisé{" "}
+                          {formatFreshness(prediction.cutoff_at)}
+                        </p>
 
                         {latestRawOddsAt && (
                           <p>
