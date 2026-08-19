@@ -32,6 +32,7 @@ type PipelineResponse = {
   predictions?: {
     matchesFound: number
     calculated: number
+    reused: number
     failed: number
   }
 }
@@ -139,6 +140,8 @@ export default function PipelineRunner() {
                     <p>Matchs : {result.predictions?.matchesFound ?? 0}</p>
 
                     <p>Calculées : {result.predictions?.calculated ?? 0}</p>
+
+                    <p>Réutilisées : {result.predictions?.reused ?? 0}</p>
 
                     <p>Échecs : {result.predictions?.failed ?? 0}</p>
                   </div>
