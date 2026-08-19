@@ -13,6 +13,11 @@ export async function getLatestPredictionForMatch(matchId: string) {
       rho,
       market_fit_loss,
       score_probabilities,
+      crowd_probabilities,
+      expected_points,
+      leader_score,
+      balanced_score,
+      challenger_score,
       matches (
         id,
         kickoff_at,
@@ -31,7 +36,9 @@ export async function getLatestPredictionForMatch(matchId: string) {
     `,
     )
     .eq("match_id", matchId)
-    .order("calculated_at", { ascending: false })
+    .order("calculated_at", {
+      ascending: false,
+    })
     .limit(1)
     .maybeSingle()
 
