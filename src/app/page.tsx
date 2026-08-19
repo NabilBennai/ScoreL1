@@ -1,8 +1,6 @@
 import Link from "next/link"
-import {
-  getAvailableRounds,
-  getRelevantRound,
-} from "@/lib/data/repositories/home-repository"
+import { getAvailableRounds } from "@/lib/data/repositories/home-repository"
+import { getRelevantRound } from "@/lib/model/relevant-round"
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("fr-FR", {
