@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 
 import { supabaseClient } from "@/lib/data/supabase/client"
 
@@ -9,6 +10,7 @@ type AuthUser = {
 }
 
 export default function AuthStatus() {
+  const router = useRouter()
   const [user, setUser] = useState<AuthUser | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -39,7 +41,7 @@ export default function AuthStatus() {
 
   async function handleLogout() {
     await supabaseClient.auth.signOut()
-    window.location.href = "/"
+    router.replace("/")
   }
 
   if (loading) {

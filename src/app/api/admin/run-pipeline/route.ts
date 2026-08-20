@@ -1,7 +1,23 @@
 import { NextResponse } from "next/server"
+
 import { runLigue1Pipeline } from "@/lib/data/services/run-ligue1-pipeline"
+import { authorizeAdmin } from "@/lib/data/supabase/admin-auth"
 
 export async function POST() {
+  const authorization = await authorizeAdmin()
+
+  if (!authorization.authorized) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: authorization.status === 401 ? "UNAUTHENTICATED" : "FORBIDDEN",
+      },
+      {
+        status: authorization.status,
+      },
+    )
+  }
+
   const startedAt = Date.now()
 
   try {
