@@ -1,26 +1,204 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f4f6f2;
+  --foreground: #10201a;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
+  --font-display: var(--font-barlow-condensed);
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-pitch-950: #062d21;
+  --color-pitch-900: #093c2b;
+  --color-pitch-800: #0c5138;
+  --color-pitch-600: #147a4d;
+  --color-pitch-500: #1d965c;
+  --color-pitch-400: #37b875;
+  --color-pitch-300: #72d3a0;
+
+  --color-ink-900: #10201a;
+  --color-ink-600: #52625b;
+  /* Secondary copy stays above WCAG AA on both white and cream surfaces. */
+  --color-ink-400: #627169;
+
+  --color-cream-50: #f4f6f2;
+  --color-cream-100: #e8eee9;
+
+  /* Dark gold is reserved for text; gold-400 remains the decorative fill. */
+  --color-gold-500: #805b0d;
+  --color-gold-400: #f0c454;
+
+  --color-line: #dce4de;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}
+
+::selection {
+  background: var(--color-pitch-300);
+  color: var(--color-pitch-950);
+}
+
+.site-header {
+  position: relative;
+  z-index: 20;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(6, 45, 33, 0.97);
+  box-shadow: 0 8px 30px rgba(6, 45, 33, 0.12);
+}
+
+.brand-mark {
+  display: grid;
+  width: 2.35rem;
+  height: 2.35rem;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.26);
+  border-radius: 0.75rem;
+  background: rgba(255, 255, 255, 0.09);
+  transform: rotate(-4deg);
+  transition: transform 180ms ease;
+}
+
+.group:hover .brand-mark {
+  transform: rotate(0deg);
+}
+
+.brand-ball {
+  width: 1.05rem;
+  height: 1.05rem;
+  border: 2px solid white;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle, white 0 17%, transparent 19%),
+    conic-gradient(
+      from 20deg,
+      transparent 0 13%,
+      white 14% 17%,
+      transparent 18% 45%,
+      white 46% 49%,
+      transparent 50% 78%,
+      white 79% 82%,
+      transparent 83%
+    );
+}
+
+.nav-link {
+  border-radius: 999px;
+  padding: 0.55rem 0.8rem;
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 0.78rem;
+  font-weight: 600;
+  transition:
+    color 150ms ease,
+    background 150ms ease;
+}
+
+.nav-link:hover,
+.nav-link-active {
+  background: rgba(255, 255, 255, 0.09);
+  color: white;
+}
+
+/* Matchday scoreboard chip: used for exact-score predictions everywhere */
+.scoreboard-chip {
+  background: linear-gradient(145deg, var(--color-pitch-950), #101b17);
+  border-radius: 0.75rem;
+  padding: 0.6rem 0.5rem;
+  text-align: center;
+}
+
+.scoreboard-digits {
+  font-family: var(--font-mono);
+  color: var(--color-gold-400);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.scoreboard-chip .scoreboard-label {
+  color: #c7cede;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/*
+ * The texture and the pitch gradient belong to the same background stack.
+ * Keeping them together prevents the texture from overriding Tailwind's
+ * background-image utility and leaving light hero copy on a white surface.
+ */
+.hero-pitch {
+  background-color: var(--color-pitch-950);
+  background-image:
+    linear-gradient(
+      105deg,
+      rgba(255, 255, 255, 0.055) 25%,
+      transparent 25% 50%,
+      rgba(255, 255, 255, 0.035) 50% 75%,
+      transparent 75%
+    ),
+    linear-gradient(
+      135deg,
+      var(--color-pitch-950) 0%,
+      var(--color-pitch-800) 58%,
+      var(--color-pitch-600) 100%
+    );
+  background-size: 180px 180px;
+}
+
+.pitch-orbit {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.pitch-orbit::before {
+  content: "";
+  position: absolute;
+  right: -7rem;
+  top: 50%;
+  width: 25rem;
+  height: 25rem;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
+  transform: translateY(-50%);
+}
+.pitch-orbit::after {
+  content: "";
+  position: absolute;
+  right: 5.45rem;
+  top: 50%;
+  width: 1px;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.surface-card {
+  border: 1px solid rgba(16, 32, 26, 0.08);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 12px 35px rgba(21, 54, 39, 0.055);
+}
+
+.pitch-divider {
+  height: 1px;
+  background: var(--color-line);
+  position: relative;
+}
+
+.pitch-divider::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: var(--color-pitch-500);
+  transform: translate(-50%, -50%);
 }

@@ -51,15 +51,19 @@ function StrategyCard({
   value: ExpectedValue | null
 }) {
   return (
-    <div className="rounded-xl border p-5">
-      <p className="text-sm font-medium text-zinc-500">{title}</p>
+    <div className="rounded-xl border border-line bg-white p-5">
+      <p className="text-sm font-semibold uppercase tracking-wide text-pitch-600">
+        {title}
+      </p>
 
-      <p className="mt-3 text-4xl font-bold">{score ?? "—"}</p>
+      <div className="mt-3 inline-flex rounded-xl bg-ink-900 px-6 py-3">
+        <p className="scoreboard-digits text-4xl">{score ?? "—"}</p>
+      </div>
 
-      <p className="mt-2 text-sm text-zinc-500">{description}</p>
+      <p className="mt-3 text-sm text-ink-600">{description}</p>
 
       {value && (
-        <div className="mt-4 space-y-1 text-sm text-zinc-600">
+        <div className="mt-4 space-y-1 text-sm text-ink-600">
           <p>Probabilité : {formatPercent(value.probability)}</p>
 
           <p>Peloton estimé : {formatPercent(value.crowdShare)}</p>
@@ -70,7 +74,7 @@ function StrategyCard({
 
           <p>Bonus rareté : +{value.rarityBonus}</p>
 
-          <p className="font-medium text-zinc-900">
+          <p className="font-medium text-ink-900">
             EV : {value.expectedPoints.toFixed(2)} pts
           </p>
         </div>
@@ -125,48 +129,50 @@ export default async function MatchPage({ params }: PageProps) {
 
   return (
     <main className="mx-auto max-w-6xl p-8">
-      <header className="mb-8">
-        <p className="text-sm text-zinc-500">Journée {match.round}</p>
+      <header className="mb-8 rounded-2xl border border-line bg-white p-6">
+        <p className="text-sm text-ink-400">Journée {match.round}</p>
 
-        <h1 className="mt-2 text-3xl font-bold">
+        <h1 className="mt-2 font-display text-4xl font-bold tracking-tight text-ink-900">
           {homeTeam.short_name ?? homeTeam.name}
           {" — "}
           {awayTeam.short_name ?? awayTeam.name}
         </h1>
 
-        <p className="mt-2 text-sm text-zinc-500">
+        <p className="mt-2 text-sm text-ink-400">
           {new Date(match.kickoff_at).toLocaleString("fr-FR")}
         </p>
       </header>
 
       <section className="grid gap-4 md:grid-cols-3">
-        <div className="rounded-xl border p-5">
-          <p className="text-sm text-zinc-500">λ domicile</p>
+        <div className="rounded-xl border border-line bg-white p-5">
+          <p className="text-sm text-ink-400">λ domicile</p>
 
-          <p className="mt-2 text-3xl font-semibold">
+          <p className="mt-2 font-display text-3xl font-semibold text-ink-900">
             {Number(prediction.lambda_home).toFixed(2)}
           </p>
         </div>
 
-        <div className="rounded-xl border p-5">
-          <p className="text-sm text-zinc-500">λ extérieur</p>
+        <div className="rounded-xl border border-line bg-white p-5">
+          <p className="text-sm text-ink-400">λ extérieur</p>
 
-          <p className="mt-2 text-3xl font-semibold">
+          <p className="mt-2 font-display text-3xl font-semibold text-ink-900">
             {Number(prediction.lambda_away).toFixed(2)}
           </p>
         </div>
 
-        <div className="rounded-xl border p-5">
-          <p className="text-sm text-zinc-500">Fit marché</p>
+        <div className="rounded-xl border border-line bg-white p-5">
+          <p className="text-sm text-ink-400">Fit marché</p>
 
-          <p className="mt-2 text-3xl font-semibold">
+          <p className="mt-2 font-display text-3xl font-semibold text-ink-900">
             {Number(prediction.market_fit_loss).toFixed(4)}
           </p>
         </div>
       </section>
 
       <section className="mt-10">
-        <h2 className="text-xl font-semibold">Pronostics recommandés</h2>
+        <h2 className="font-display text-2xl font-semibold text-ink-900">
+          Pronostics recommandés
+        </h2>
 
         <div className="mt-4 grid gap-4 md:grid-cols-2">
           <StrategyCard
@@ -186,19 +192,21 @@ export default async function MatchPage({ params }: PageProps) {
       </section>
 
       <section className="mt-10">
-        <h2 className="text-xl font-semibold">Scores les plus probables</h2>
+        <h2 className="font-display text-2xl font-semibold text-ink-900">
+          Scores les plus probables
+        </h2>
 
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           {topScores.map((score) => (
             <div
               key={`${score.home}-${score.away}`}
-              className="rounded-xl border p-4"
+              className="scoreboard-chip"
             >
-              <p className="text-2xl font-bold">
+              <p className="scoreboard-digits text-2xl">
                 {score.home}-{score.away}
               </p>
 
-              <p className="mt-1 text-sm text-zinc-500">
+              <p className="mt-1 text-sm text-cream-100/70">
                 {formatPercent(score.probability)}
               </p>
             </div>
@@ -206,7 +214,7 @@ export default async function MatchPage({ params }: PageProps) {
         </div>
       </section>
 
-      <footer className="mt-10 text-sm text-zinc-500">
+      <footer className="mt-10 text-sm text-ink-400">
         Calculé le {new Date(prediction.calculated_at).toLocaleString("fr-FR")}
       </footer>
     </main>

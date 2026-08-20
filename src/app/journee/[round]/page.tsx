@@ -260,10 +260,10 @@ function PredictionScore({
   score: string | null
 }) {
   return (
-    <div className="rounded-lg bg-zinc-100 px-4 py-3 text-center">
-      <p className="text-xs text-zinc-500">{label}</p>
+    <div className="scoreboard-chip">
+      <p className="scoreboard-label text-[0.65rem]">{label}</p>
 
-      <p className="mt-1 text-lg font-bold">{score ?? "—"}</p>
+      <p className="scoreboard-digits mt-1 text-lg">{score ?? "—"}</p>
     </div>
   )
 }
@@ -271,7 +271,7 @@ function PredictionScore({
 function PredictionStatusBadge({ status }: { status: PredictionStatus }) {
   if (status === "UP_TO_DATE") {
     return (
-      <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-800">
+      <span className="rounded-full bg-pitch-600/10 px-3 py-1 text-xs font-medium text-pitch-800">
         À jour
       </span>
     )
@@ -279,14 +279,14 @@ function PredictionStatusBadge({ status }: { status: PredictionStatus }) {
 
   if (status === "CONSENSUS_CHANGED") {
     return (
-      <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-800">
+      <span className="rounded-full bg-gold-500/15 px-3 py-1 text-xs font-medium text-gold-500">
         Consensus modifié
       </span>
     )
   }
 
   return (
-    <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-600">
+    <span className="rounded-full bg-cream-100 px-3 py-1 text-xs font-medium text-ink-600">
       Statut inconnu
     </span>
   )
@@ -311,22 +311,26 @@ export default async function RoundPage({ params }: PageProps) {
   return (
     <main className="mx-auto max-w-6xl p-8">
       <header>
-        <p className="text-sm font-medium text-zinc-500">Ligue 1</p>
+        <p className="text-sm font-medium text-ink-400">Ligue 1</p>
 
         <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <h1 className="text-3xl font-bold">Journée {round}</h1>
+          <h1 className="font-display text-4xl font-bold tracking-tight text-ink-900">
+            Journée {round}
+          </h1>
 
           {matches.length > 0 && (
-            <p className="text-sm text-zinc-500">
+            <p className="text-sm text-ink-400">
               {calculatedMatches}/{matches.length} prédictions disponibles
             </p>
           )}
         </div>
+
+        <div className="pitch-divider mt-4" />
       </header>
 
       {matches.length === 0 ? (
-        <section className="mt-10 rounded-xl border p-8">
-          <p className="text-zinc-600">
+        <section className="mt-10 rounded-xl border border-line bg-white p-8">
+          <p className="text-ink-600">
             Aucun match enregistré pour cette journée.
           </p>
         </section>
@@ -359,16 +363,16 @@ export default async function RoundPage({ params }: PageProps) {
               <Link
                 key={match.id}
                 href={`/match/${match.id}`}
-                className="block rounded-xl border p-5 transition hover:bg-zinc-50"
+                className="block rounded-xl border border-line bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-pitch-500 hover:shadow-md"
               >
                 <div className="flex flex-col gap-6">
                   <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                     <div>
-                      <p className="text-sm text-zinc-500">
+                      <p className="text-sm text-ink-400">
                         {formatKickoff(match.kickoff_at)}
                       </p>
 
-                      <h2 className="mt-2 text-xl font-semibold">
+                      <h2 className="mt-2 font-display text-2xl font-semibold text-ink-900">
                         {homeTeam.short_name ?? homeTeam.name}
                         {" — "}
                         {awayTeam.short_name ?? awayTeam.name}
@@ -377,7 +381,7 @@ export default async function RoundPage({ params }: PageProps) {
                       {match.status === "FINISHED" &&
                         match.home_goals !== null &&
                         match.away_goals !== null && (
-                          <p className="mt-2 text-sm font-medium">
+                          <p className="mt-2 text-sm font-medium text-pitch-800">
                             Résultat : {match.home_goals}-{match.away_goals}
                           </p>
                         )}
@@ -385,11 +389,11 @@ export default async function RoundPage({ params }: PageProps) {
 
                     <div className="flex flex-wrap gap-2">
                       {prediction ? (
-                        <span className="rounded-full bg-zinc-900 px-3 py-1 text-xs font-medium text-white">
+                        <span className="rounded-full bg-pitch-600 px-3 py-1 text-xs font-medium text-cream-50">
                           Calculé
                         </span>
                       ) : (
-                        <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-600">
+                        <span className="rounded-full bg-cream-100 px-3 py-1 text-xs font-medium text-ink-600">
                           En attente
                         </span>
                       )}
@@ -398,7 +402,7 @@ export default async function RoundPage({ params }: PageProps) {
                         <PredictionStatusBadge status={predictionStatus} />
                       )}
 
-                      <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs text-zinc-600">
+                      <span className="rounded-full bg-cream-100 px-3 py-1 text-xs text-ink-600">
                         {bookmakerCount} bookmaker
                         {bookmakerCount > 1 ? "s" : ""}
                       </span>
@@ -424,7 +428,7 @@ export default async function RoundPage({ params }: PageProps) {
                         />
                       </div>
 
-                      <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-zinc-500">
+                      <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-ink-400">
                         <p>
                           Prédiction {formatFreshness(prediction.calculated_at)}
                         </p>
@@ -442,8 +446,8 @@ export default async function RoundPage({ params }: PageProps) {
                       </div>
                     </>
                   ) : (
-                    <div className="rounded-lg bg-zinc-50 p-4">
-                      <p className="text-sm text-zinc-500">
+                    <div className="rounded-lg bg-cream-100 p-4">
+                      <p className="text-sm text-ink-600">
                         La prédiction sera disponible dès que suffisamment de
                         données bookmaker auront été synchronisées.
                       </p>
