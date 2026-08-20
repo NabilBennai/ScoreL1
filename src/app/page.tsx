@@ -46,7 +46,7 @@ export default async function HomePage() {
                 <span aria-hidden="true">→</span>
               </Link>
 
-              <p className="text-xs text-cream-100/60">
+              <p className="text-xs text-cream-50/80">
                 {relevantRound.matchCount} match
                 {relevantRound.matchCount > 1 ? "s" : ""} disponible
                 {relevantRound.matchCount > 1 ? "s" : ""}

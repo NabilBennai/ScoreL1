@@ -23,12 +23,14 @@
 
   --color-ink-900: #10201a;
   --color-ink-600: #52625b;
-  --color-ink-400: #819087;
+  /* Secondary copy stays above WCAG AA on both white and cream surfaces. */
+  --color-ink-400: #627169;
 
   --color-cream-50: #f4f6f2;
   --color-cream-100: #e8eee9;
 
-  --color-gold-500: #d8a62e;
+  /* Dark gold is reserved for text; gold-400 remains the decorative fill. */
+  --color-gold-500: #805b0d;
   --color-gold-400: #f0c454;
 
   --color-line: #dce4de;
@@ -113,7 +115,7 @@ body {
   text-align: center;
 }
 
-.scoreboard-chip .scoreboard-digits {
+.scoreboard-digits {
   font-family: var(--font-mono);
   color: var(--color-gold-400);
   font-weight: 700;

@@ -68,7 +68,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         </header>
         <div className="flex min-h-[calc(100vh-4.5rem)] flex-col">
           {children}
-          <footer className="mt-auto border-t border-line/80 bg-white/55">
+          <footer className="mt-auto border-t border-line bg-white">
             <div className="mx-auto flex max-w-6xl flex-col gap-2 px-5 py-6 text-xs text-ink-400 sm:flex-row sm:items-center sm:justify-between sm:px-8">
               <p>MPP Scores · L&apos;analyse avant l&apos;intuition.</p>
               <p>Probabilités de marché · Poisson · Dixon-Coles</p>
