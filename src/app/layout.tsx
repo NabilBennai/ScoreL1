@@ -1,6 +1,8 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { Geist, Geist_Mono, Barlow_Condensed } from "next/font/google"
+
+import AuthStatus from "./AuthStatus"
 import "./globals.css"
 
 const geistSans = Geist({
@@ -59,15 +61,20 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               <Link href="/" className="nav-link nav-link-active">
                 Pronostics
               </Link>
+
               <Link href="/admin" className="nav-link">
                 <span className="hidden sm:inline">Le modèle</span>
                 <span className="sm:hidden">Modèle</span>
               </Link>
+
+              <AuthStatus />
             </nav>
           </div>
         </header>
+
         <div className="flex min-h-[calc(100vh-4.5rem)] flex-col">
           {children}
+
           <footer className="mt-auto border-t border-line bg-white">
             <div className="mx-auto flex max-w-6xl flex-col gap-2 px-5 py-6 text-xs text-ink-400 sm:flex-row sm:items-center sm:justify-between sm:px-8">
               <p>MPP Scores · L&apos;analyse avant l&apos;intuition.</p>
