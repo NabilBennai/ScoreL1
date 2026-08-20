@@ -1,6 +1,8 @@
 import Link from "next/link"
-import { notFound } from "next/navigation"
+import { notFound, redirect } from "next/navigation"
+
 import { getRoundMatches } from "@/lib/data/repositories/round-repository"
+import { getCurrentAccessLevel } from "@/lib/data/supabase/access"
 import {
   buildMarketConsensus,
   type BookmakerMarket,
@@ -43,7 +45,6 @@ type Prediction = {
   odds_snapshot_id: string
   leader_score: string | null
   balanced_score: string | null
-  challenger_score: string | null
 }
 
 type OddsSnapshot = {
@@ -135,11 +136,8 @@ function buildCurrentConsensus(
 
   const markets: BookmakerMarket[] = latestSnapshots.map((snapshot) => ({
     bookmaker: snapshot.bookmaker ?? "unknown",
-
     oneXTwo: snapshot.market_payload.oneXTwo ?? undefined,
-
     over25: snapshot.market_payload.over25 ?? undefined,
-
     btts: snapshot.market_payload.btts ?? undefined,
   }))
 
@@ -262,7 +260,6 @@ function PredictionScore({
   return (
     <div className="scoreboard-chip">
       <p className="scoreboard-label text-[0.65rem]">{label}</p>
-
       <p className="scoreboard-digits mt-1 text-lg">{score ?? "—"}</p>
     </div>
   )
@@ -293,6 +290,16 @@ function PredictionStatusBadge({ status }: { status: PredictionStatus }) {
 }
 
 export default async function RoundPage({ params }: PageProps) {
+  const accessLevel = await getCurrentAccessLevel()
+
+  if (accessLevel === "anonymous") {
+    redirect("/login")
+  }
+
+  if (accessLevel === "user") {
+    redirect("/")
+  }
+
   const { round: roundParam } = await params
 
   const round = Number(roundParam)
@@ -338,7 +345,6 @@ export default async function RoundPage({ params }: PageProps) {
         <section className="mt-8 grid gap-4">
           {matches.map((match) => {
             const homeTeam = getSingleTeam(match.home_team)
-
             const awayTeam = getSingleTeam(match.away_team)
 
             if (!homeTeam || !awayTeam) {
@@ -346,13 +352,9 @@ export default async function RoundPage({ params }: PageProps) {
             }
 
             const predictions = match.predictions as Prediction[] | null
-
             const snapshots = match.odds_snapshots as OddsSnapshot[] | null
-
             const prediction = getLatestPrediction(predictions)
-
             const bookmakerCount = getRawBookmakerCount(snapshots)
-
             const latestRawOddsAt = getLatestRawOddsAt(snapshots)
 
             const predictionStatus = prediction
@@ -420,11 +422,6 @@ export default async function RoundPage({ params }: PageProps) {
                         <PredictionScore
                           label="Équilibré"
                           score={prediction.balanced_score}
-                        />
-
-                        <PredictionScore
-                          label="Challenger"
-                          score={prediction.challenger_score}
                         />
                       </div>
 

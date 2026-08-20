@@ -1,5 +1,7 @@
-import { notFound } from "next/navigation"
+import { notFound, redirect } from "next/navigation"
+
 import { getLatestPredictionForMatch } from "@/lib/data/repositories/match-prediction-repository"
+import { getCurrentAccessLevel } from "@/lib/data/supabase/access"
 
 type PageProps = {
   params: Promise<{
@@ -84,6 +86,16 @@ function StrategyCard({
 }
 
 export default async function MatchPage({ params }: PageProps) {
+  const accessLevel = await getCurrentAccessLevel()
+
+  if (accessLevel === "anonymous") {
+    redirect("/login")
+  }
+
+  if (accessLevel === "user") {
+    redirect("/")
+  }
+
   const { matchId } = await params
 
   const prediction = await getLatestPredictionForMatch(matchId)
