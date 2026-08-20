@@ -128,15 +128,27 @@ body {
   letter-spacing: 0.08em;
 }
 
-/* Faint mown-turf stripes for the hero band */
-.turf-texture {
-  background-image: linear-gradient(
-    105deg,
-    rgba(255, 255, 255, 0.055) 25%,
-    transparent 25% 50%,
-    rgba(255, 255, 255, 0.035) 50% 75%,
-    transparent 75%
-  );
+/*
+ * The texture and the pitch gradient belong to the same background stack.
+ * Keeping them together prevents the texture from overriding Tailwind's
+ * background-image utility and leaving light hero copy on a white surface.
+ */
+.hero-pitch {
+  background-color: var(--color-pitch-950);
+  background-image:
+    linear-gradient(
+      105deg,
+      rgba(255, 255, 255, 0.055) 25%,
+      transparent 25% 50%,
+      rgba(255, 255, 255, 0.035) 50% 75%,
+      transparent 75%
+    ),
+    linear-gradient(
+      135deg,
+      var(--color-pitch-950) 0%,
+      var(--color-pitch-800) 58%,
+      var(--color-pitch-600) 100%
+    );
   background-size: 180px 180px;
 }
 

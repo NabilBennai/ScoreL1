@@ -17,7 +17,7 @@ export default async function HomePage() {
 
   return (
     <main className="mx-auto w-full max-w-6xl px-5 py-7 sm:px-8 sm:py-10">
-      <section className="turf-texture relative overflow-hidden rounded-[1.75rem] bg-linear-to-br from-pitch-950 via-pitch-800 to-pitch-600 px-6 py-9 text-cream-50 shadow-xl shadow-pitch-950/15 sm:px-10 sm:py-12 lg:px-14 lg:py-14">
+      <section className="hero-pitch relative overflow-hidden rounded-[1.75rem] px-6 py-9 text-cream-50 shadow-xl shadow-pitch-950/15 sm:px-10 sm:py-12 lg:px-14 lg:py-14">
         <div className="pitch-orbit" aria-hidden="true" />
         <div className="relative z-10">
           <div className="inline-flex items-center gap-2 rounded-full border border-white/12 bg-white/8 px-3 py-1.5 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-pitch-300">
