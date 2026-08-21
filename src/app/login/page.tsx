@@ -30,7 +30,7 @@ export default function LoginPage() {
     <main className="login-pitch relative flex flex-1 items-center overflow-hidden px-5 py-12 sm:px-8 sm:py-16">
       <div className="login-field-lines" aria-hidden="true" />
 
-      <div className="relative z-10 mx-auto grid w-full max-w-5xl overflow-hidden rounded-[1.75rem] border border-white/15 bg-pitch-950/80 shadow-2xl shadow-pitch-950/30 backdrop-blur-sm lg:grid-cols-[1.1fr_0.9fr]">
+      <div className="login-panel relative z-10 mx-auto grid w-full max-w-5xl overflow-hidden rounded-[1.75rem] border border-white/15 bg-pitch-950/80 shadow-2xl shadow-pitch-950/30 backdrop-blur-sm lg:grid-cols-[1.1fr_0.9fr]">
         <section className="relative hidden min-h-[34rem] overflow-hidden border-r border-white/10 p-12 text-white lg:flex lg:flex-col lg:justify-between">
           <div>
             <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/8 px-3 py-1.5 text-[0.68rem] font-bold uppercase tracking-[0.2em] text-pitch-300">

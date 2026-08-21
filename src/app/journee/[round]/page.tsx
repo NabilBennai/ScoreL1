@@ -365,7 +365,7 @@ export default async function RoundPage({ params }: PageProps) {
               <Link
                 key={match.id}
                 href={`/match/${match.id}`}
-                className="block rounded-xl border border-line bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-pitch-500 hover:shadow-md"
+                className="match-card block rounded-xl border border-line bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-pitch-500 hover:shadow-md"
               >
                 <div className="flex flex-col gap-6">
                   <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">

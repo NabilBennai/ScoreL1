@@ -43,7 +43,7 @@ function StrategyCard({
   total: number
 }) {
   return (
-    <div className="rounded-xl border p-5">
+    <div className="data-card rounded-xl border p-5">
       <h3 className="text-lg font-semibold">{title}</h3>
 
       <div className="mt-4 space-y-5">

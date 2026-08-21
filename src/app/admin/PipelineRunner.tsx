@@ -44,7 +44,7 @@ type PipelineResult = {
 
 function Stat({ label, value }: { label: string; value: number | string }) {
   return (
-    <div className="rounded-lg bg-zinc-100 p-4">
+    <div className="data-card rounded-lg bg-zinc-100 p-4">
       <p className="text-xs text-zinc-500">{label}</p>
 
       <p className="mt-1 text-xl font-semibold">{value}</p>
@@ -90,7 +90,7 @@ export default function PipelineRunner() {
         type="button"
         onClick={runPipeline}
         disabled={running}
-        className="rounded-lg bg-zinc-900 px-5 py-3 font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+        className="premium-button rounded-lg bg-zinc-900 px-5 py-3 font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
       >
         {running ? "Pipeline en cours..." : "Lancer le pipeline"}
       </button>

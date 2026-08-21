@@ -53,7 +53,7 @@ function StrategyCard({
   value: ExpectedValue | null
 }) {
   return (
-    <div className="rounded-xl border border-line bg-white p-5">
+    <div className="data-card rounded-xl border border-line bg-white p-5">
       <p className="text-sm font-semibold uppercase tracking-wide text-pitch-600">
         {title}
       </p>
@@ -156,7 +156,7 @@ export default async function MatchPage({ params }: PageProps) {
       </header>
 
       <section className="grid gap-4 md:grid-cols-3">
-        <div className="rounded-xl border border-line bg-white p-5">
+        <div className="data-card rounded-xl border border-line bg-white p-5">
           <p className="text-sm text-ink-400">λ domicile</p>
 
           <p className="mt-2 font-display text-3xl font-semibold text-ink-900">
@@ -164,7 +164,7 @@ export default async function MatchPage({ params }: PageProps) {
           </p>
         </div>
 
-        <div className="rounded-xl border border-line bg-white p-5">
+        <div className="data-card rounded-xl border border-line bg-white p-5">
           <p className="text-sm text-ink-400">λ extérieur</p>
 
           <p className="mt-2 font-display text-3xl font-semibold text-ink-900">
@@ -172,7 +172,7 @@ export default async function MatchPage({ params }: PageProps) {
           </p>
         </div>
 
-        <div className="rounded-xl border border-line bg-white p-5">
+        <div className="data-card rounded-xl border border-line bg-white p-5">
           <p className="text-sm text-ink-400">Fit marché</p>
 
           <p className="mt-2 font-display text-3xl font-semibold text-ink-900">
