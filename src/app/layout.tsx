@@ -1,6 +1,9 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { Geist, Geist_Mono, Barlow_Condensed } from "next/font/google"
+import { Suspense } from "react"
+
+import { getCurrentAccessLevel } from "@/lib/data/supabase/access"
 
 import AuthStatus from "./AuthStatus"
 import "./globals.css"
@@ -25,6 +28,21 @@ export const metadata: Metadata = {
   title: "Mon Petit Prono Ligue 1",
   description:
     "Pronostics de scores exacts pour la Ligue 1, calculés à partir des probabilités de marché.",
+}
+
+async function AdminModelLink() {
+  const accessLevel = await getCurrentAccessLevel()
+
+  if (accessLevel !== "admin") {
+    return null
+  }
+
+  return (
+    <Link href="/admin" className="nav-link">
+      <span className="hidden sm:inline">Le modèle</span>
+      <span className="sm:hidden">Modèle</span>
+    </Link>
+  )
 }
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -62,10 +80,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
                 Pronostics
               </Link>
 
-              <Link href="/admin" className="nav-link">
-                <span className="hidden sm:inline">Le modèle</span>
-                <span className="sm:hidden">Modèle</span>
-              </Link>
+              <Suspense fallback={null}>
+                <AdminModelLink />
+              </Suspense>
 
               <AuthStatus />
             </nav>

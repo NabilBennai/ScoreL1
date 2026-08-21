@@ -2,6 +2,10 @@ import { getCurrentUserProfile } from "./profile"
 
 export type AccessLevel = "anonymous" | "user" | "subscriber" | "admin"
 
+export function hasPaidAccess(accessLevel: AccessLevel) {
+  return accessLevel === "subscriber" || accessLevel === "admin"
+}
+
 export async function getCurrentAccessLevel(): Promise<AccessLevel> {
   const profile = await getCurrentUserProfile()
 

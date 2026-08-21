@@ -1,5 +1,9 @@
 import Link from "next/link"
 import { getAvailableRounds } from "@/lib/data/repositories/home-repository"
+import {
+  getCurrentAccessLevel,
+  hasPaidAccess,
+} from "@/lib/data/supabase/access"
 import { getRelevantRound } from "@/lib/model/relevant-round"
 
 function formatDate(value: string) {
@@ -10,7 +14,41 @@ function formatDate(value: string) {
   }).format(new Date(value))
 }
 
-export default async function HomePage() {
+function PricingHome() {
+  return (
+    <main className="mx-auto flex w-full max-w-5xl flex-1 items-center px-5 py-12 sm:px-8 sm:py-16">
+      <section
+        className="grid w-full gap-5 md:grid-cols-2"
+        aria-label="Offres d'abonnement"
+      >
+        <article className="surface-card rounded-[1.75rem] p-8 sm:p-10">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-pitch-600">
+            Mensuel
+          </p>
+          <p className="mt-8 font-display text-6xl font-bold tracking-tight text-ink-900 sm:text-7xl">
+            5,99&nbsp;€
+          </p>
+          <p className="mt-2 text-sm font-medium text-ink-400">par mois</p>
+        </article>
+
+        <article className="hero-pitch relative overflow-hidden rounded-[1.75rem] p-8 text-cream-50 shadow-xl shadow-pitch-950/15 sm:p-10">
+          <div className="pitch-orbit" aria-hidden="true" />
+          <div className="relative z-10">
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-pitch-300">
+              Annuel
+            </p>
+            <p className="mt-8 font-display text-6xl font-bold tracking-tight sm:text-7xl">
+              59,99&nbsp;€
+            </p>
+            <p className="mt-2 text-sm font-medium text-cream-100/75">par an</p>
+          </div>
+        </article>
+      </section>
+    </main>
+  )
+}
+
+async function PaidHome() {
   const rounds = await getAvailableRounds()
 
   const relevantRound = getRelevantRound(rounds)
@@ -171,4 +209,14 @@ export default async function HomePage() {
       </section>
     </main>
   )
+}
+
+export default async function HomePage() {
+  const accessLevel = await getCurrentAccessLevel()
+
+  if (!hasPaidAccess(accessLevel)) {
+    return <PricingHome />
+  }
+
+  return <PaidHome />
 }
