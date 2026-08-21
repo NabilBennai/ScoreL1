@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server"
-import { getLatestPredictionForMatch } from "@/lib/data/repositories/match-prediction-repository"
+
+import { calculateMatchPrediction } from "@/lib/data/services/calculate-match-prediction"
+import { authorizeAdmin } from "@/lib/data/supabase/admin-auth"
 
 type RouteContext = {
   params: Promise<{
@@ -7,30 +9,37 @@ type RouteContext = {
   }>
 }
 
-export async function GET(_request: Request, context: RouteContext) {
+export async function POST(_request: Request, context: RouteContext) {
+  const authorization = await authorizeAdmin()
+
+  if (!authorization.authorized) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: authorization.status === 401 ? "UNAUTHENTICATED" : "FORBIDDEN",
+      },
+      {
+        status: authorization.status,
+      },
+    )
+  }
+
   try {
     const { matchId } = await context.params
 
-    const prediction = await getLatestPredictionForMatch(matchId)
+    const result = await calculateMatchPrediction(matchId)
 
-    if (!prediction) {
-      return NextResponse.json(
-        {
-          error: "PREDICTION_NOT_FOUND",
-        },
-        {
-          status: 404,
-        },
-      )
-    }
-
-    return NextResponse.json(prediction)
+    return NextResponse.json({
+      success: true,
+      ...result,
+    })
   } catch (error) {
     console.error(error)
 
     return NextResponse.json(
       {
-        error: "PREDICTION_LOAD_FAILED",
+        success: false,
+        error: "MATCH_PREDICTION_FAILED",
       },
       {
         status: 500,

@@ -1,34 +1,37 @@
-import Link from "next/link"
+import { redirect } from "next/navigation"
+
+import { getCurrentUserProfile } from "@/lib/data/supabase/profile"
+
 import EvaluationPanel from "./EvaluationPanel"
 import PipelineRunner from "./PipelineRunner"
 
-export default function AdminPage() {
+export default async function AdminPage() {
+  const profile = await getCurrentUserProfile()
+
+  if (!profile) {
+    redirect("/login")
+  }
+
+  if (profile.role !== "admin") {
+    redirect("/")
+  }
+
   return (
-    <main className="mx-auto max-w-6xl p-8">
-      <header>
-        <p className="text-sm font-medium text-zinc-500">Administration</p>
+    <main className="mx-auto w-full max-w-6xl px-5 py-10 sm:px-8">
+      <div className="mb-8">
+        <h1 className="font-display text-4xl font-bold uppercase tracking-tight">
+          Administration
+        </h1>
 
-        <h1 className="mt-2 text-3xl font-bold">Pipeline Ligue 1</h1>
-
-        <p className="mt-3 max-w-2xl text-zinc-600">
-          Synchronisation des cotes, attribution des journées, calcul des
-          prédictions et récupération des résultats.
+        <p className="mt-2 text-sm text-ink-500">
+          Pilotage des synchronisations, calculs et évaluations.
         </p>
+      </div>
 
-        <div className="mt-4">
-          <Link href="/" className="text-sm font-medium underline">
-            Retour à l`&lsquo;accueil
-          </Link>
-        </div>
-      </header>
-
-      <section className="mt-10">
+      <div className="space-y-8">
         <PipelineRunner />
-      </section>
-
-      <section className="mt-12 border-t pt-10">
         <EvaluationPanel />
-      </section>
+      </div>
     </main>
   )
 }
