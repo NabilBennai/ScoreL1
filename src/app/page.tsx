@@ -17,32 +17,47 @@ function formatDate(value: string) {
 function PricingHome() {
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-1 items-center px-5 py-12 sm:px-8 sm:py-16">
-      <section
-        className="grid w-full gap-5 md:grid-cols-2"
-        aria-label="Offres d'abonnement"
-      >
-        <article className="surface-card rounded-[1.75rem] p-8 sm:p-10">
+      <section className="w-full" aria-label="Offres d'abonnement">
+        <div className="mx-auto max-w-2xl text-center">
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-pitch-600">
-            Mensuel
+            MPP Scores
           </p>
-          <p className="mt-8 font-display text-6xl font-bold tracking-tight text-ink-900 sm:text-7xl">
-            5,99&nbsp;€
+          <h1 className="mt-3 font-display text-4xl font-bold tracking-tight text-ink-900 sm:text-5xl">
+            Des pronostics Ligue 1 guidés par la donnée.
+          </h1>
+          <p className="mt-4 text-base leading-7 text-ink-500">
+            Retrouvez les scores exacts les plus probables pour chaque journée,
+            calculés à partir des cotes du marché et de notre modèle
+            statistique.
           </p>
-          <p className="mt-2 text-sm font-medium text-ink-400">par mois</p>
-        </article>
+        </div>
 
-        <article className="hero-pitch relative overflow-hidden rounded-[1.75rem] p-8 text-cream-50 shadow-xl shadow-pitch-950/15 sm:p-10">
-          <div className="pitch-orbit" aria-hidden="true" />
-          <div className="relative z-10">
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-pitch-300">
-              Annuel
+        <div className="mt-10 grid gap-5 md:grid-cols-2">
+          <article className="surface-card rounded-[1.75rem] p-8 sm:p-10">
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-pitch-600">
+              Mensuel
             </p>
-            <p className="mt-8 font-display text-6xl font-bold tracking-tight sm:text-7xl">
-              59,99&nbsp;€
+            <p className="mt-8 font-display text-6xl font-bold tracking-tight text-ink-900 sm:text-7xl">
+              5,99&nbsp;€
             </p>
-            <p className="mt-2 text-sm font-medium text-cream-100/75">par an</p>
-          </div>
-        </article>
+            <p className="mt-2 text-sm font-medium text-ink-400">par mois</p>
+          </article>
+
+          <article className="hero-pitch relative overflow-hidden rounded-[1.75rem] p-8 text-cream-50 shadow-xl shadow-pitch-950/15 sm:p-10">
+            <div className="pitch-orbit" aria-hidden="true" />
+            <div className="relative z-10">
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-pitch-300">
+                Annuel
+              </p>
+              <p className="mt-8 font-display text-6xl font-bold tracking-tight sm:text-7xl">
+                59,99&nbsp;€
+              </p>
+              <p className="mt-2 text-sm font-medium text-cream-100/75">
+                par an
+              </p>
+            </div>
+          </article>
+        </div>
       </section>
     </main>
   )
