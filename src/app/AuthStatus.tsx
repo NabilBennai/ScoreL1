@@ -15,16 +15,28 @@ export default function AuthStatus() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    supabaseClient.auth.getUser().then(({ data }) => {
-      setUser({
-        email: data.user?.email ?? null,
-      })
-      setLoading(false)
+    let authStateChanged = false
+
+    void supabaseClient.auth.getUser().then(({ data, error }) => {
+      if (!authStateChanged) {
+        setUser(
+          !error && data.user
+            ? {
+                email: data.user.email ?? null,
+              }
+            : null,
+        )
+        setLoading(false)
+      }
     })
 
     const {
       data: { subscription },
-    } = supabaseClient.auth.onAuthStateChange((_event, session) => {
+    } = supabaseClient.auth.onAuthStateChange((event, session) => {
+      if (event !== "INITIAL_SESSION") {
+        authStateChanged = true
+      }
+
       setUser(
         session?.user
           ? {
@@ -32,6 +44,7 @@ export default function AuthStatus() {
             }
           : null,
       )
+      setLoading(false)
     })
 
     return () => {
