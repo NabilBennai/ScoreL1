@@ -41,7 +41,8 @@ export default function AuthStatus() {
 
   async function handleLogout() {
     await supabaseClient.auth.signOut()
-    router.replace("/")
+    router.push("/")
+    router.refresh()
   }
 
   if (loading) {
@@ -50,22 +51,27 @@ export default function AuthStatus() {
 
   if (!user) {
     return (
-      <a href="/login" className="text-sm font-medium">
+      <a href="/login" className="auth-login-button">
+        <span className="auth-user-icon" aria-hidden="true" />
         Se connecter
       </a>
     )
   }
 
   return (
-    <div className="flex items-center gap-3">
-      <span className="text-sm text-neutral-600">{user.email}</span>
+    <div className="auth-profile">
+      <span className="auth-user-icon" aria-hidden="true" />
+      <span className="auth-email" title={user.email ?? "Profil connecté"}>
+        {user.email ?? "Profil"}
+      </span>
 
       <button
         type="button"
         onClick={handleLogout}
-        className="text-sm font-medium"
+        className="auth-logout-button"
       >
-        Déconnexion
+        <span className="hidden sm:inline">Déconnexion</span>
+        <span className="sm:hidden">Quitter</span>
       </button>
     </div>
   )
